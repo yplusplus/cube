@@ -213,7 +213,7 @@ void TcpConnection::HandleRead() {
 }
 
 void TcpConnection::HandleEvents(int revents) {
-    // prevent tcp connection being destroyed in HandleXXXX()
+    // prevent connection being destroyed in HandleXXXX()
     TcpConnectionPtr guard(shared_from_this());
 
     if (revents & Poller::POLLERR) {

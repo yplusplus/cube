@@ -11,6 +11,8 @@
 #include "redis_connection.h"
 #include "redis_adapter.h"
 
+using namespace std::placeholders;
+
 namespace cube {
 
 namespace redis {
@@ -29,15 +31,7 @@ RedisConnection::RedisConnection(EventLoop *event_loop,
     m_peer_addr(peer_addr),
     m_closed(false) {
 
-    m_eventor->SetReadCallback(
-            std::bind(&RedisConnection::HandleRead, this));
-    m_eventor->SetWriteCallback(
-            std::bind(&RedisConnection::HandleWrite, this));
-    m_eventor->SetCloseCallback(
-            std::bind(&RedisConnection::HandleClose, this));
-    m_eventor->SetErrorCallback(
-            std::bind(&RedisConnection::HandleError, this));
-
+    m_eventor->SetEventsCallback(std::bind(&RedisConnection::HandleEvents, this, _1));
 }
 
 RedisConnection::~RedisConnection() {
@@ -132,6 +126,27 @@ void RedisConnection::OnDisconnect(const redisAsyncContext *redis_context, int s
     if (conn->m_redis_context != NULL) {
         conn->m_redis_context = NULL;
         conn->HandleClose();
+    }
+}
+
+void RedisConnection::HandleEvents(int revents) {
+    // prevent connection being destroyed in HandleXXXX()
+    RedisConnectionPtr guard(shared_from_this());
+
+    if (revents & Poller::POLLERR) {
+        HandleError();
+    }
+
+    if ((revents & Poller::POLLHUB) && (revents & ~Poller::POLLIN)) {
+        HandleClose();
+    }
+
+    if (revents & Poller::POLLIN) {
+        HandleRead();
+    }
+
+    if (revents & Poller::POLLOUT) {
+        HandleWrite();
     }
 }
 

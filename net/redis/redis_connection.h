@@ -56,6 +56,7 @@ private:
     static void OnConnect(const redisAsyncContext *redis_context, int status);
     static void OnDisconnect(const redisAsyncContext *redis_context, int status);
 
+    void HandleEvents(int revents);
     void HandleRead();
     void HandleWrite();
     void HandleError();
