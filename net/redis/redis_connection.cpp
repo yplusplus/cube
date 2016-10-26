@@ -44,7 +44,6 @@ void RedisConnection::Initialize() {
     RedisCubeAttach(m_redis_context, this);
     redisAsyncSetConnectCallback(m_redis_context, OnConnect);
     redisAsyncSetDisconnectCallback(m_redis_context, OnDisconnect);
-    m_eventor->Tie(shared_from_this());
     m_eventor->EnableReading();
     m_eventor->EnableWriting();
 }
