@@ -130,7 +130,8 @@ bool TcpConnection::Write(const char *data, size_t len, const WriteCompleteCallb
         }
     }
 
-    SetWriteCompleteCallback(cb);
+    m_write_complete_callback = cb;
+    //SetWriteCompleteCallback(cb);
     m_output_buffer.Append(data, len);
     if (!m_eventor->Writing())
         m_eventor->EnableWriting();

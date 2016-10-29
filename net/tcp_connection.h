@@ -27,7 +27,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
         // callback settor
         void SetConnectCallback(const ConnectCallback &cb) { m_connect_callback = cb; }
         void SetDisconnectCallback(const DisconnectCallback &cb) { m_disconnect_callback = cb; }
-        void SetWriteCompleteCallback(const WriteCompleteCallback &cb) { m_write_complete_callback = cb; }
+        //void SetWriteCompleteCallback(const WriteCompleteCallback &cb) { m_write_complete_callback = cb; }
 
         uint64_t Id() const { return m_conn_id; }
         const InetAddr &LocalAddr() const { return m_local_addr; }
