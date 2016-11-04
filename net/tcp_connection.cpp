@@ -3,6 +3,7 @@
 #include "tcp_connection.h"
 
 #include "base/log.h"
+#include "time_util.h"
 #include "event_loop.h"
 #include "eventor.h"
 #include "socket.h"
@@ -24,7 +25,8 @@ TcpConnection::TcpConnection(EventLoop *event_loop,
     m_local_addr(local_addr),
     m_peer_addr(peer_addr),
     m_state(ConnState_Connected),
-    m_read_bytes(-1) {
+    m_read_bytes(-1),
+    m_last_active_time(TimeUtil::CurrentTime()) {
 
     m_eventor->SetEventsCallback(std::bind(&TcpConnection::HandleEvents, this, _1));
 
@@ -216,6 +218,8 @@ void TcpConnection::HandleRead() {
 void TcpConnection::HandleEvents(int revents) {
     // prevent connection being destroyed in HandleXXXX()
     TcpConnectionPtr guard(shared_from_this());
+
+    m_last_active_time = TimeUtil::CurrentTime();
 
     if (revents & Poller::POLLERR) {
         HandleError();

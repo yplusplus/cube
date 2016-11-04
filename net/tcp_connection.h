@@ -50,6 +50,8 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
         void EnableReading();
         void DisableReading();
 
+        time_t LastActiveTime() const { return m_last_active_time; }
+
     private:
 
         void OnRead();
@@ -82,6 +84,8 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
         std::string m_read_delimiter;
         int m_read_bytes;
+
+        time_t m_last_active_time;
 
         ConnectCallback m_connect_callback;
         DisconnectCallback m_disconnect_callback;
