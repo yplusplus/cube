@@ -45,6 +45,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
         bool Write(const char *data, size_t len, const WriteCompleteCallback &cb);
 
         void Close();   // close the connection
+        void CloseAfter(int64_t delay_ms);
         bool Closed() const { return m_state == ConnState_Disconnected; }
 
         void EnableReading();

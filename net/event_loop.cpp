@@ -59,17 +59,20 @@ void EventLoop::RemoveEvents(Eventor *eventor) {
     m_poller->RemoveEvents(eventor);
 }
 
-TimerId EventLoop::AddOneShotTimer(const Task &task, int64_t expiration_ms) {
+TimerId EventLoop::RunAt(const Task &task, int64_t expiration_ms) {
     return m_timer_queue->AddTimer(task, expiration_ms, 0);
 }
 
-TimerId EventLoop::AddRepeatedTimer(const Task &task, int64_t interval_ms) {
-    int64_t now_ms = TimeUtil::CurrentTimeMs();
-    return m_timer_queue->AddTimer(task, now_ms + interval_ms, interval_ms);
+TimerId EventLoop::RunAfter(const Task &task, int64_t delay_ms) {
+    return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMs() + delay_ms, 0);
+}
+
+TimerId EventLoop::RunPeriodic(const Task &task, int64_t interval_ms) {
+    return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMs() + interval_ms, interval_ms);
 }
 
 void EventLoop::Loop() {
-    assert(IsLoopThread());
+    AssertInLoopThread();
     m_running = true;
     while (m_running) {
         RunOnce();
@@ -77,8 +80,7 @@ void EventLoop::Loop() {
 }
 
 void EventLoop::RunOnce() {
-
-    assert(IsLoopThread());
+    AssertInLoopThread();
 
     int64_t now_ms = TimeUtil::CurrentTimeMs();
     std::vector<Task> tasks;
@@ -91,13 +93,13 @@ void EventLoop::RunOnce() {
     }
 
     // timer queue
-    int64_t next_expiration = 0;
+    int64_t next_expiration = -1;
     m_timer_queue->Expire(now_ms, next_expiration);
     
     // poller
     int poll_timeout_ms = 5;
-    if (next_expiration >= 0 && next_expiration < poll_timeout_ms) {
-        poll_timeout_ms = next_expiration;
+    if (next_expiration > now_ms && (next_expiration - now_ms) < poll_timeout_ms) {
+        poll_timeout_ms = next_expiration - now_ms;
     }
 
     {
@@ -116,7 +118,8 @@ void EventLoop::RunOnce() {
 
 void EventLoop::Stop() {
     m_running = false;
-    WakeUp();
+    if (!IsLoopThread())
+        WakeUp();
 }
 
 void EventLoop::HandleEvents(int revents) {

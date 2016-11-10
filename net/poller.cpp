@@ -19,7 +19,7 @@ Poller::~Poller() {
 }
 
 bool Poller::UpdateEvents(Eventor *eventor) {
-    assert(m_event_loop->IsLoopThread());
+    m_event_loop->AssertInLoopThread();
     int operation = 0;
     if (m_eventors.count(eventor->Fd())) {
         operation = EPOLL_CTL_MOD;
@@ -31,7 +31,7 @@ bool Poller::UpdateEvents(Eventor *eventor) {
 }
 
 bool Poller::RemoveEvents(Eventor *eventor) {
-    assert(m_event_loop->IsLoopThread());
+    m_event_loop->AssertInLoopThread();
     assert(m_eventors.count(eventor->Fd()) > 0);
     m_eventors.erase(eventor->Fd());
     return EpollOperate(EPOLL_CTL_DEL, eventor);

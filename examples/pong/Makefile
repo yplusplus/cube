@@ -1,7 +1,3 @@
-ping: ping.o ../../libcube.a
-	cd ../..; make
-	g++ -o $@ $< -L../.. -lcube
-
 pong: pong.o ../../libcube.a
 	cd ../..; make
 	g++ -o $@ $< -L../.. -lcube

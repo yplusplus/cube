@@ -144,6 +144,11 @@ void TcpConnection::Close() {
     HandleClose();
 }
 
+void TcpConnection::CloseAfter(int64_t delay_ms) {
+    m_event_loop->AssertInLoopThread();
+    m_event_loop->RunAfter(std::bind(&TcpConnection::Close, shared_from_this()), delay_ms);
+}
+
 void TcpConnection::EnableReading() {
     if (Closed()) return;
     m_eventor->EnableReading();
@@ -183,7 +188,7 @@ void TcpConnection::OnRead() {
 }
 
 void TcpConnection::HandleRead() {
-    assert(m_event_loop->IsLoopThread());
+    m_event_loop->AssertInLoopThread();
 
     if (Closed()) return;
 
@@ -239,7 +244,7 @@ void TcpConnection::HandleEvents(int revents) {
 }
 
 int TcpConnection::HandleConnect() {
-    assert(m_event_loop->IsLoopThread());
+    m_event_loop->AssertInLoopThread();
 
     if (Closed()) return CUBE_ERR;
 
@@ -262,7 +267,7 @@ int TcpConnection::HandleConnect() {
 }
 
 void TcpConnection::HandleWrite() {
-    assert(m_event_loop->IsLoopThread());
+    m_event_loop->AssertInLoopThread();
 
     if (Closed()) return;
 
@@ -307,7 +312,7 @@ void TcpConnection::HandleWrite() {
 }
 
 void TcpConnection::HandleClose() {
-    assert(m_event_loop->IsLoopThread());
+    m_event_loop->AssertInLoopThread();
 
     // has closed??
     if (Closed()) return;
@@ -323,7 +328,7 @@ void TcpConnection::HandleClose() {
 }
 
 void TcpConnection::HandleError() {
-    assert(m_event_loop->IsLoopThread());
+    m_event_loop->AssertInLoopThread();
     HandleClose();
 }
 

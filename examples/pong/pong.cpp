@@ -47,7 +47,7 @@ void ShowStat() {
 }
 
 int main() {
-    g_event_loop.AddRepeatedTimer(ShowStat, 1000);
+    g_event_loop.RunPeriodic(ShowStat, 1000);
     InetAddr addr(8456);
     TcpServer server(&g_event_loop, addr);
     server.SetNewConnectionCallback(std::bind(OnNewConnection, _1));

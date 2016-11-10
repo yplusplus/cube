@@ -38,10 +38,16 @@ class EventLoop {
         void RemoveEvents(Eventor *e);
 
         // wrap for timer queue
-        TimerId AddOneShotTimer(const Task &task, int64_t expiration_ms);
-        TimerId AddRepeatedTimer(const Task &task, int64_t interval_ms);
+        TimerId RunAt(const Task &task, int64_t expiration_ms);
+        TimerId RunAfter(const Task &task, int64_t delay_ms);
+        TimerId RunPeriodic(const Task &task, int64_t interval_ms);
 
-        bool IsLoopThread() { return m_thread_id == std::this_thread::get_id(); }
+        bool IsLoopThread() const { return m_thread_id == std::this_thread::get_id(); }
+        void AssertInLoopThread() const {
+            if (!IsLoopThread()) {
+                abort();
+            }
+        }
 
         void WakeUp();
 
