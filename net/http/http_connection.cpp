@@ -8,6 +8,8 @@
 
 using namespace std::placeholders;
 
+#define HTTP_REQUEST_MAX_BODY_SIZE (1024 * 1024) // 1M
+
 namespace cube {
 
 namespace http {
@@ -52,8 +54,12 @@ void HTTPConnection::OnHeaders(TcpConnectionPtr conn, Buffer *buffer) {
     }
     size_t body_len = m_request.ContentLength();
     if (body_len > 0) {
-        conn->ReadBytes(body_len, std::bind(&HTTPConnection::OnBody, this, _1, _2));
-        return;
+        if (body_len > HTTP_REQUEST_MAX_BODY_SIZE) {
+            conn->Close();
+        } else {
+            conn->ReadAny(std::bind(&HTTPConnection::OnBody, this, _1, _2));
+            return;
+        }
     }
     HandleRequest();
 }
@@ -105,13 +111,17 @@ bool HTTPConnection::ParseHeaders(Buffer *buffer) {
 void HTTPConnection::OnBody(TcpConnectionPtr conn, Buffer *buffer) {
     // TODO Parse body according to ContentType
     size_t body_len = m_request.ContentLength();
-    if (buffer->ReadableBytes() < body_len) {
-        conn->Close();
-        return;
+    assert(body_len > m_request.Body().length());
+    size_t need = body_len - m_request.Body().length();
+    if (buffer->ReadableBytes() >= need) {
+        m_request.Write(buffer->Peek(), need);
+        buffer->Retrieve(need);
+        HandleRequest();
+    } else {
+        m_request.Write(buffer->Peek(), buffer->ReadableBytes());
+        buffer->RetrieveAll();
+        conn->ReadAny(std::bind(&HTTPConnection::OnBody, this, _1, _2));
     }
-    m_request.Write(buffer->Peek(), body_len);
-    buffer->Retrieve(body_len);
-    HandleRequest();
 }
 
 void HTTPConnection::HandleRequest() {

@@ -1,5 +1,7 @@
 #include "http_response.h"
 
+#include "http_util.h"
+
 namespace cube {
     
 namespace http {
@@ -35,6 +37,7 @@ void HTTPResponse::Write(const char *data, size_t len) {
 std::string HTTPResponse::ToString() const {
     const std::string crlf("\r\n");
     std::string str;
+    str.reserve(1024);
     char buf[256];
     // status line
     str += m_proto + " " + std::to_string((long long)m_status_code) + " " + m_status_message + crlf;
@@ -44,8 +47,7 @@ std::string HTTPResponse::ToString() const {
         //SetContentLength(m_body.length());
         snprintf(buf, sizeof(buf), "Content-Length: %lu\r\n", m_body.length());
         str += buf;
-    }
-
+    } 
     for (auto it = m_headers.begin(); it != m_headers.end(); it++) {
         if (it->second.empty()) continue;
         str += it->first + ": " + it->second[0];
@@ -65,8 +67,8 @@ std::string HTTPResponse::ToString() const {
 }
 
 void HTTPResponse::Reset() {
-    m_proto.clear();
-    m_status_message.clear();
+    m_proto = "HTTP/1.1";
+    SetStatusCode(HTTPStatus_OK);
     m_headers.clear();
     m_body.clear();
     m_parse_state = PARSE_STATUS_LINE;

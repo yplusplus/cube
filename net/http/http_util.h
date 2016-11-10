@@ -1,11 +1,17 @@
 #ifndef __CUBE_HTTP_UTIL_H__
 #define __CUBE_HTTP_UTIL_H__
 
+#include <string>
+
 namespace cube {
 
 namespace http {
     
 enum {
+    // 1xx
+    HTTPStatus_Continue                         = 100,
+    HTTPStatus_Switching_Protocols              = 101,
+
     // 2xx
     HTTPStatus_OK                               = 200,
     HTTPStatus_Created                          = 201,
@@ -66,7 +72,14 @@ enum {
     HTTPStatus_Not_Extended                     = 510,
 };
 
-static const std::string HTTP_HEADER_NONE("__Cube_Header_None__");
+const std::string HTTP_HEADER_NONE("__Cube_Header_None__");
+
+class HTTPUtil {
+    public:
+        static const std::string &GetHTTPStatusReason(int status);
+
+    private:
+};
 
 }
 

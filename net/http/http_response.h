@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "http_util.h"
+
 namespace cube {
     
 namespace http {
@@ -51,9 +53,11 @@ class HTTPResponse {
 
         // setter
         void SetProto(const std::string &proto) { m_proto = proto; }
-        // TODO
-        void SetStatusCode(int status_code) { m_status_code = status_code; }
-        void SetStatusMessage(const std::string &message) { m_status_message = message; }
+        void SetStatusCode(int status_code) { 
+            m_status_code = status_code;
+            m_status_message = HTTPUtil::GetHTTPStatusReason(m_status_code);
+        }
+        void SetStatusMessage(const std::string status_message) { m_status_message = status_message; }
         void SetHeader(const std::string &key, const std::string &value) {
             auto it = m_headers.find(key);
             if (it == m_headers.end()) {

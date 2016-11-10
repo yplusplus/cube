@@ -85,7 +85,7 @@ bool HTTPClientConnection::ParseHeaders(Buffer *buffer) {
     // status line
     // Proto StatusCode StatusMessage
     std::vector<std::string> fields;
-    ::cube::strings::Split(lines[0], " ", fields);
+    ::cube::strings::Split(lines[0], " ", fields, 2);
     if (fields.size() != 3) {
         return false;
     }
