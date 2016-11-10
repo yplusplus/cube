@@ -58,8 +58,8 @@ void HTTPConnection::OnHeaders(TcpConnectionPtr conn, Buffer *buffer) {
             conn->Close();
         } else {
             conn->ReadAny(std::bind(&HTTPConnection::OnBody, this, _1, _2));
-            return;
         }
+        return;
     }
     HandleRequest();
 }
