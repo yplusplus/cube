@@ -43,18 +43,7 @@ TcpConnection::~TcpConnection() {
 }
 
 void TcpConnection::ReadAny(const ReadCallback &cb) {
-    assert(cb);
-    if (Closed()) return;
-    if (m_input_buffer.ReadableBytes() > 0) {
-        m_event_loop->Post(std::bind(m_read_callback, shared_from_this(), &m_input_buffer));
-        return;
-    }
-    m_read_bytes = 0;
-    m_read_callback = cb;
-    if (!m_eventor->Reading()) {
-        EnableReading();
-    }
-    return;
+    return ReadBytes(1, cb);
 }
 
 void TcpConnection::ReadBytes(size_t read_bytes, const ReadCallback &cb) {
@@ -173,7 +162,7 @@ void TcpConnection::Initialize() {
 
 void TcpConnection::OnRead() {
     ReadCallback read_callback;
-    if (m_read_bytes >= 0 && static_cast<int>(m_input_buffer.ReadableBytes()) >= m_read_bytes) {
+    if (m_read_bytes > 0 && static_cast<int>(m_input_buffer.ReadableBytes()) >= m_read_bytes) {
         // ReadAny or ReadBytes
         read_callback = std::move(m_read_callback);
         m_read_bytes = -1;

@@ -35,9 +35,12 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
         void Initialize();
 
-        void ReadAny(const ReadCallback &cb);
+        // run callback when the read data's length >= read_bytes
         void ReadBytes(size_t read_bytes, const ReadCallback &cb);
+        // run callback when the read data contains delimiter
         void ReadUntil(const std::string &delimiter, const ReadCallback &cb);
+        // run callback when the read data's length >= 1
+        void ReadAny(const ReadCallback &cb);
 
         bool Write(const std::string &str);
         bool Write(const char *data, size_t len);
