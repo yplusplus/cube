@@ -25,7 +25,6 @@ void HelloHandler(HTTPConnectionPtr conn, const HTTPRequest &request) {
     HTTPResponse response;
     response.SetProto(request.Proto());
     response.SetStatusCode(HTTPStatus_OK);
-    response.SetStatusMessage("OK");
     response.Write("Hello, World!");
     conn->SendResponse(response);
 }
