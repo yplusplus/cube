@@ -1,5 +1,4 @@
-# Cube
-a tiny network library
+**Cube is a tiny network library**
 
 ## Requirement
 + gcc >= 4.4, supports c++0x
