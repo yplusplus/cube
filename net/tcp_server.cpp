@@ -25,6 +25,7 @@ bool TcpServer::Start() {
     
     bool ret = m_acceptor->Listen();
     if (!ret) {
+        m_err_msg = m_acceptor->ErrMsg();
         m_acceptor.reset();
     }
     return ret;

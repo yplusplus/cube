@@ -25,6 +25,7 @@ class TcpServer {
 
         const InetAddr &ServerAddr() const { return m_server_addr; }
 
+        const std::string &ErrMsg() const { return m_err_msg; }
     private:
         void OnAccept(int sockfd);
 
@@ -36,6 +37,7 @@ class TcpServer {
         std::unique_ptr<Acceptor> m_acceptor;
 
         NewConnectionCallback m_new_connection_callback;
+        std::string m_err_msg;
 };
 
 }

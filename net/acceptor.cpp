@@ -1,6 +1,8 @@
 #include "acceptor.h"
 
 #include <assert.h>
+#include <errno.h>
+#include <string.h>
 
 #include "base/log.h"
 #include "event_loop.h"
@@ -26,6 +28,7 @@ Acceptor::~Acceptor() {
 bool Acceptor::Listen() {
     int sockfd = sockets::CreateNonBlockStreamSocket();
     if (sockfd < 0) {
+        m_err_msg = std::string(strerror(errno));
         return false;
     }
     m_sock.reset(new Socket(sockfd));

@@ -75,11 +75,12 @@ void EventLoop::Loop() {
     AssertInLoopThread();
     m_running = true;
     while (m_running) {
-        RunOnce();
+        // wait for 5ms at most
+        LoopOnce(5);
     }
 }
 
-void EventLoop::RunOnce() {
+void EventLoop::LoopOnce(int poll_timeout_ms) {
     AssertInLoopThread();
 
     int64_t now_ms = TimeUtil::CurrentTimeMs();
@@ -97,8 +98,8 @@ void EventLoop::RunOnce() {
     m_timer_queue->Expire(now_ms, next_expiration);
     
     // poller
-    int poll_timeout_ms = 5;
-    if (next_expiration > now_ms && (next_expiration - now_ms) < poll_timeout_ms) {
+    if (next_expiration > now_ms 
+            && (poll_timeout_ms == -1 || (next_expiration - now_ms) < poll_timeout_ms)) {
         poll_timeout_ms = next_expiration - now_ms;
     }
 

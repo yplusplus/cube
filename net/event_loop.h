@@ -29,7 +29,7 @@ class EventLoop {
         void Post(const Task &task);
 
         void Loop();
-        void RunOnce();
+        void LoopOnce(int poll_timeout_ms);
 
         void Stop();
 

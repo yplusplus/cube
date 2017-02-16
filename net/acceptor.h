@@ -22,6 +22,7 @@ class Acceptor {
         bool Listen();
         void Stop();
 
+        const std::string &ErrMsg() const { return m_err_msg; }
     private:
         void HandleEvents(int revents);
         void HandleRead();
@@ -35,6 +36,7 @@ class Acceptor {
         InetAddr m_listen_addr;
 
         AcceptCallback m_accept_callback;
+        std::string m_err_msg;
 };
 
 }

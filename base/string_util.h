@@ -8,6 +8,10 @@ namespace cube {
 
 namespace strings {
 
+void InternalAppend(std::string& dst, const char* fmt, va_list ap);
+std::string FormatString(const char* fmt, ...);
+std::string& FormatString(std::string &dst, const char *fmt, ...);
+void FormatAppend(std::string &dst, const char *fmt, ...);
 std::string &LeftTrim(std::string &str, const std::string &charlist = " \t\r\n");
 std::string &RightTrim(std::string &str, const std::string &charlist = " \t\r\n");
 std::string &Trim(std::string &str, const std::string &charlist = " \t\r\n");

@@ -1,8 +1,87 @@
 #include "string_util.h"
 
+#include <stdarg.h>
+
 namespace cube {
 
 namespace strings {
+
+void InternalAppend(std::string& dst, const char* fmt, va_list ap)
+{
+    // Use 1k bytes for the first try, should be enough for most cases
+    static __thread char space[1024];
+
+    int size = sizeof(space);
+    char* p = space;
+    int result = 0;
+
+    va_list backup_ap;
+    va_copy(backup_ap, ap);
+
+    do
+    {
+        result = vsnprintf(p, size, fmt, ap);
+        va_end(ap);
+
+        if ((result >= 0) && result < size)
+        {
+            // Fit the buffer exactly
+            break;
+        }
+
+        if (result < 0)
+        {
+            // Double the size of buffer
+            size *= 2;
+        }
+        else
+        {
+            // Need result+1 exactly
+            size = result + 1;
+        }
+
+        p = (char*)(p == space ? malloc(size) : realloc(p, size));
+        if (!p)
+            throw std::bad_alloc();
+        va_copy(ap, backup_ap);
+    } while (true);
+
+    dst.append(p, result);
+
+    if (p != space)
+        free(p);
+
+    // make coverity happy
+    va_end(backup_ap);
+}
+
+std::string FormatString(const char* fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    std::string result;
+    InternalAppend(result, fmt, ap);
+    va_end(ap);
+    return result;
+}
+
+std::string& FormatString(std::string& dst, const char* fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    dst.clear();
+    InternalAppend(dst, fmt, ap);
+    va_end(ap);
+    return dst;
+}       
+
+void FormatAppend(std::string& dst, const char* fmt, ...)
+{   
+    va_list ap;
+    va_start(ap, fmt);
+    InternalAppend(dst, fmt, ap);
+    va_end(ap);
+}  
 
 std::string &LeftTrim(std::string &str, const std::string &charlist /* = " \t\r\n" */) {
     int num = 0;

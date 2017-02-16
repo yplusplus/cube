@@ -56,6 +56,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
         time_t LastActiveTime() const { return m_last_active_time; }
 
+        const std::string &ErrMsg() const { return m_err_msg; }
     private:
 
         void OnRead();
@@ -95,6 +96,7 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
         DisconnectCallback m_disconnect_callback;
         ReadCallback m_read_callback;
         WriteCompleteCallback m_write_complete_callback;
+        std::string m_err_msg;
 };
 
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;

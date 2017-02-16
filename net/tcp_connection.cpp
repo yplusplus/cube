@@ -3,6 +3,7 @@
 #include "tcp_connection.h"
 
 #include "base/log.h"
+#include "base/string_util.h"
 #include "time_util.h"
 #include "event_loop.h"
 #include "eventor.h"
@@ -91,8 +92,10 @@ bool TcpConnection::Write(const std::string &str, const WriteCompleteCallback &c
 
 bool TcpConnection::Write(const char *data, size_t len, const WriteCompleteCallback &cb) {
     // Not allow to send data when closed
-    if (Closed()) 
+    if (Closed()) {
+        strings::FormatString(m_err_msg, "tcp connection[%lu] is closed", Id());
         return false;
+    }
 
     if (len == 0) {
         // It is always ok to send 0-length data
