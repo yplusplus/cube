@@ -16,7 +16,9 @@ struct Timer {
     int64_t expiration_ms;   
     int64_t interval_ms;
     bool operator<(const Timer &rhs) const {
-        return expiration_ms < rhs.expiration_ms;
+        if (expiration_ms != rhs.expiration_ms)
+            return expiration_ms < rhs.expiration_ms;
+        return timer_id < rhs.timer_id;
     }
 };
 

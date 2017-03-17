@@ -36,6 +36,13 @@ EventLoop::~EventLoop() {
     ::close(m_wakeup_fd);
 }
 
+__thread EventLoop *tls_ptr = NULL;
+EventLoop *EventLoop::Current() {
+    if (tls_ptr == NULL)
+        tls_ptr = new EventLoop;
+    return tls_ptr;
+}
+
 void EventLoop::Post(const Task &task) {
     bool is_empty = false;
     {
@@ -64,11 +71,19 @@ TimerId EventLoop::RunAt(const Task &task, int64_t expiration_ms) {
 }
 
 TimerId EventLoop::RunAfter(const Task &task, int64_t delay_ms) {
-    return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMs() + delay_ms, 0);
+    return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMillis() + delay_ms, 0);
 }
 
 TimerId EventLoop::RunPeriodic(const Task &task, int64_t interval_ms) {
-    return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMs() + interval_ms, interval_ms);
+    return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMillis() + interval_ms, interval_ms);
+}
+
+TimerId EventLoop::RunPeriodic(const Task &task, int64_t expiration_ms, int64_t interval_ms) {
+    return m_timer_queue->AddTimer(task, expiration_ms, interval_ms);
+}
+
+void EventLoop::CancelTimer(TimerId timer_id) {
+    m_timer_queue->RemoveTimer(timer_id);
 }
 
 void EventLoop::Loop() {
@@ -80,22 +95,26 @@ void EventLoop::Loop() {
     }
 }
 
-void EventLoop::LoopOnce(int poll_timeout_ms) {
+int EventLoop::LoopOnce(int poll_timeout_ms) {
     AssertInLoopThread();
 
-    int64_t now_ms = TimeUtil::CurrentTimeMs();
+    int result = 0;
+
+    int64_t now_ms = TimeUtil::CurrentTimeMillis();
     std::vector<Task> tasks;
     {
         std::unique_lock<std::mutex> lock(m_tasks_mutex);
         tasks.swap(m_tasks);
     }
+
     for (auto it = tasks.begin(); it != tasks.end(); it++) {
         (*it)();
     }
+    result += tasks.size();
 
     // timer queue
     int64_t next_expiration = -1;
-    m_timer_queue->Expire(now_ms, next_expiration);
+    result += m_timer_queue->Expire(now_ms, next_expiration);
     
     // poller
     if (next_expiration > now_ms 
@@ -114,7 +133,9 @@ void EventLoop::LoopOnce(int poll_timeout_ms) {
     for (auto it = active_eventors.begin();
             it != active_eventors.end(); it++) {
         (*it)->HandleEvents();
+        result++;
     }
+    return result;
 }
 
 void EventLoop::Stop() {

@@ -7,6 +7,8 @@ class InetAddr;
 
 namespace sockets {
     int CreateStreamSocket();
+    int CreateDgramSocket();
+    bool Bind(int sockfd, const InetAddr &bind_addr);
     int CreateNonBlockStreamSocket();
     bool SetNonBlocking(int sockfd, bool on);
     bool SetNoDelay(int sockfd, bool on);

@@ -12,6 +12,8 @@ class InetAddr {
         InetAddr(const struct sockaddr_in &addr);
         InetAddr(const InetAddr &addr);
         InetAddr(const std::string &ip, uint16_t port);
+        InetAddr(const char *ip, uint16_t port);
+        InetAddr(uint32_t ip, uint16_t port);
         InetAddr(uint16_t port);
 
         // format likes a.b.c.d
@@ -19,7 +21,9 @@ class InetAddr {
         // format likes a.b.c.d:port
         std::string IpPort() const;
         // host order
-        uint16_t Port() const;
+        uint32_t HostOrderIp() const;
+        uint16_t HostOrderPort() const;
+        uint32_t NetworkOrderIp() const;
         uint16_t NetworkOrderPort() const;
 
         struct sockaddr *SockAddr() { return (struct sockaddr *)(&m_addr); }

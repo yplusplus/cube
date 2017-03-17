@@ -13,7 +13,7 @@ class TimeUtil {
         static time_t CurrentTime();
 
         // get current time in ms
-        static int64_t CurrentTimeMs();
+        static int64_t CurrentTimeMillis();
 
 };
 

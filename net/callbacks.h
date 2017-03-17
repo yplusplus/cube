@@ -7,17 +7,22 @@ namespace cube {
 
 class TcpConnection;
 class Buffer;
+class UdpConnection;
+class InetAddr;
 
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
 
+typedef std::shared_ptr<UdpConnection> UdpConnectionPtr;
+
 typedef std::function<void(int)> EventsCallback;
 typedef std::function<void(int fd)> AcceptCallback;
-typedef std::function<void(TcpConnectionPtr conn)> NewConnectionCallback;
-typedef std::function<void(TcpConnectionPtr conn, int)> ConnectCallback;
-typedef std::function<void(TcpConnectionPtr conn)> DisconnectCallback;
-typedef std::function<void(TcpConnectionPtr conn, Buffer *)> ReadCallback;
-typedef std::function<void(TcpConnectionPtr conn)> WriteCompleteCallback;
+typedef std::function<void(TcpConnectionPtr)> NewConnectionCallback;
+typedef std::function<void(TcpConnectionPtr, int)> ConnectCallback;
+typedef std::function<void(TcpConnectionPtr)> DisconnectCallback;
+typedef std::function<void(TcpConnectionPtr, Buffer *)> ReadCallback;
+typedef std::function<void(TcpConnectionPtr)> WriteCompleteCallback;
 
+typedef std::function<void(UdpConnectionPtr, char *, size_t, const InetAddr &)> UdpReadCallback;
 }
 
 #endif

@@ -41,6 +41,20 @@ InetAddr::InetAddr(const std::string &ip, uint16_t port) {
     inet_aton(ip.c_str(), &m_addr.sin_addr);
 }
 
+InetAddr::InetAddr(const char *ip, uint16_t port) {
+    memset(&m_addr, 0, sizeof(m_addr));
+    m_addr.sin_family = AF_INET;
+    m_addr.sin_port = htons(port);
+    inet_aton(ip, &m_addr.sin_addr);
+}
+
+InetAddr::InetAddr(uint32_t ip, uint16_t port) {
+    memset(&m_addr, 0, sizeof(m_addr));
+    m_addr.sin_family = AF_INET;
+    m_addr.sin_port = htons(port);
+    m_addr.sin_addr.s_addr = htonl(ip);
+}
+
 InetAddr::InetAddr(uint16_t port) {
     memset(&m_addr, 0, sizeof(m_addr));
     m_addr.sin_family = AF_INET;
@@ -55,12 +69,21 @@ std::string InetAddr::Ip() const {
 }
 
 std::string InetAddr::IpPort() const {
-    return Ip() + ":" + std::to_string(static_cast<unsigned long long>(Port()));
+    return Ip() + ":" + std::to_string(static_cast<unsigned long long>(HostOrderPort()));
 }
 
-uint16_t InetAddr::Port() const {
+uint32_t InetAddr::HostOrderIp() const {
+    uint32_t ip = ntohl(m_addr.sin_addr.s_addr);
+    return ip;
+}
+
+uint16_t InetAddr::HostOrderPort() const {
     uint16_t port = ntohs(m_addr.sin_port);
     return port;
+}
+
+uint32_t InetAddr::NetworkOrderIp() const {
+    return m_addr.sin_addr.s_addr;
 }
 
 uint16_t InetAddr::NetworkOrderPort() const {
