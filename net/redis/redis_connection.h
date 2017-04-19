@@ -15,6 +15,8 @@ namespace cube {
 class EventLoop;
 class Eventor;
 
+typedef uint64_t TimerId; 
+
 namespace redis {
 
 class RedisConnection;
@@ -42,7 +44,10 @@ public:
     void SetConnectCallback(const ConnectCallback &cb) { m_connect_callback = cb; }
     void SetDisconnectCallback(const DisconnectCallback &cb) { m_disconnect_callback = cb; }
 
-    int IssueCommand(const RedisReplyCallback &redis_reply_callback, const char *format, va_list ap);
+    int IssueCommand(const RedisReplyCallback &redis_reply_callback, int64_t timeout_ms,
+            const char *format, va_list ap);
+    int IssueCommand(const RedisReplyCallback &redis_reply_callback, int64_t timeout_ms,
+            int argc, const char **argv, const size_t *argvlen);
 
     const InetAddr &LocalAddr() const { return m_local_addr; }
     const InetAddr &PeerAddr() const { return m_peer_addr; }
@@ -53,6 +58,7 @@ public:
 
 private:
     static void OnRedisReply(struct redisAsyncContext *redis_context, void *reply, void *privdata);
+    static void OnRedisReplyTimeout(RedisConnectionPtr conn);
     static void OnConnect(const redisAsyncContext *redis_context, int status);
     static void OnDisconnect(const redisAsyncContext *redis_context, int status);
 
@@ -77,6 +83,8 @@ private:
     InetAddr m_peer_addr;
 
     bool m_closed;
+
+    TimerId m_timer_id;
 
     ConnectCallback m_connect_callback;
     DisconnectCallback m_disconnect_callback;

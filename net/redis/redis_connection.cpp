@@ -29,7 +29,8 @@ RedisConnection::RedisConnection(EventLoop *event_loop,
     m_eventor(new Eventor(m_event_loop, m_redis_context->c.fd)),
     m_local_addr(local_addr),
     m_peer_addr(peer_addr),
-    m_closed(false) {
+    m_closed(false),
+    m_timer_id(0) {
 
     m_eventor->SetEventsCallback(std::bind(&RedisConnection::HandleEvents, this, _1));
 }
@@ -68,17 +69,35 @@ void RedisConnection::Remove() {
     m_eventor->Remove();
 }
 
-int RedisConnection::IssueCommand(const RedisReplyCallback &redis_reply_callback, const char *format, va_list ap) {
+int RedisConnection::IssueCommand(const RedisReplyCallback &redis_reply_callback, int64_t timeout_ms, const char *format, va_list ap) {
     assert(!m_redis_reply_callback);
 
     int status = redisvAsyncCommand(m_redis_context, OnRedisReply, NULL, format, ap);
-    if (status == REDIS_OK) {
-        status = CUBE_OK;
-        m_redis_reply_callback = redis_reply_callback;
-    } else {
-        status = CUBE_ERR;
-    }
-    return status;
+    if (status != REDIS_OK)
+        return CUBE_ERR;
+
+    m_redis_reply_callback = redis_reply_callback;
+    // add timeout timer
+    m_timer_id = m_event_loop->RunAfter(
+            std::bind(&RedisConnection::OnRedisReplyTimeout, shared_from_this()), timeout_ms);
+
+    return CUBE_OK;
+}
+
+int RedisConnection::IssueCommand(const RedisReplyCallback &redis_reply_callback,
+        int64_t timeout_ms, int argc, const char **argv, const size_t *argvlen) {
+    assert(!m_redis_reply_callback);
+
+    int status = redisAsyncCommandArgv(m_redis_context, OnRedisReply, NULL, argc, argv, argvlen);
+    if (status != REDIS_OK)
+        return CUBE_ERR;
+
+    m_redis_reply_callback = redis_reply_callback;
+    // add timeout timer
+    m_timer_id = m_event_loop->RunAfter(
+            std::bind(&RedisConnection::OnRedisReplyTimeout, shared_from_this()), timeout_ms);
+
+    return CUBE_OK;
 }
 
 void RedisConnection::Close() {
@@ -87,10 +106,28 @@ void RedisConnection::Close() {
 
 void RedisConnection::OnRedisReply(struct redisAsyncContext *redis_context, void *reply, void *privdata) {
     RedisConnection *conn = static_cast<RedisConnection *>(redis_context->ev.data);
+
+    // remove timer if no timeout
+    if (conn->m_timer_id > 0) {
+        conn->m_event_loop->CancelTimer(conn->m_timer_id);
+        conn->m_timer_id = 0; 
+    }
+        
     assert(conn->m_redis_reply_callback);
     RedisReplyCallback callback = std::move(conn->m_redis_reply_callback);
     conn->m_redis_reply_callback = NULL;
     callback((redisReply *)reply);
+}
+
+void RedisConnection::OnRedisReplyTimeout(RedisConnectionPtr conn) {
+    
+    LOG_DEBUG("");
+    // time out
+    
+    conn->m_timer_id = 0;
+
+    // call back throuht call redisAsyncFree in HandleClose()
+    conn->HandleClose();
 }
 
 void RedisConnection::OnConnect(const redisAsyncContext *redis_context, int status) {

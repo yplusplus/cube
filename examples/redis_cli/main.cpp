@@ -33,13 +33,17 @@ void OnRedisReply(redisReply *reply) {
     if (++g_reply_count == 2) {
         g_event_loop.Stop();
     } else {
-        g_redis_client.IssueCommand(g_server_addr, std::bind(OnRedisReply, _1), "GET cube");
+        g_redis_client.IssueCommand(
+                g_server_addr, std::bind(OnRedisReply, _1), 10000, "GET cube");
     }
 }
 
 int main() {
     signal(SIGINT, HandleSignal);
-    g_redis_client.IssueCommand(g_server_addr, std::bind(OnRedisReply, _1), "SET cube %s", "cUbE");
+    const char *argv[3] = {"SET", "cube", "cUbE9"};
+    const size_t argvlen[3] = {3, 4, 5};
+    g_redis_client.IssueCommand(g_server_addr, std::bind(OnRedisReply, _1),
+            10000, 3, &argv[0], argvlen);
     g_event_loop.Loop();
     return 0;
 }

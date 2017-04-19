@@ -1,3 +1,5 @@
+#include <assert.h>
+
 // hiredis headers
 #include "async.h"
 #include "hiredis.h"
@@ -27,7 +29,7 @@ RedisClient::~RedisClient() {
 RedisConnectionPtr RedisClient::Connect(const InetAddr &server_addr) {
     RedisConnectionPtr conn;
     redisAsyncContext *redis_context = redisAsyncConnect(
-            server_addr.Ip().c_str(), server_addr.Port());
+            server_addr.Ip().c_str(), server_addr.HostOrderPort());
     if (redis_context == NULL) {
         // error
         return conn;
@@ -87,7 +89,18 @@ void RedisClient::PutConn(RedisConnectionPtr conn) {
 }
 
 void RedisClient::IssueCommand(const InetAddr &server_addr,
-        const RedisReplyCallback &callback, const char *format, ...) {
+        const RedisReplyCallback &callback,
+        int64_t timeout_ms, const char *format, ...) {
+
+    va_list ap;
+    va_start(ap, format);
+    IssueCommand(server_addr, callback, timeout_ms, format, ap);
+    va_end(ap);
+}
+
+void RedisClient::IssueCommand(const InetAddr &server_addr,
+        const RedisReplyCallback &callback,
+        int64_t timeout_ms, const char *format, va_list ap) {
 
     RedisConnectionPtr conn = GetConn(server_addr);
     if (!conn) {
@@ -97,11 +110,39 @@ void RedisClient::IssueCommand(const InetAddr &server_addr,
         return;
     }
 
-    va_list ap;
-    va_start(ap, format);
+    assert(m_requesting_conns.count(conn->Id()) == 0);
+
     int status = conn->IssueCommand(
-            std::bind(&RedisClient::OnRedisReply, this, callback, conn, _1), format, ap);
-    va_end(ap);
+            std::bind(&RedisClient::OnRedisReply, this, callback, conn, _1),
+            timeout_ms, format, ap);
+    if (status != CUBE_OK) {
+        // issue command failed, run callback in next loop
+        // and close the connection
+        m_event_loop->Post(std::bind(callback, (redisReply *)NULL));
+        conn->Close();
+        return;
+    }
+    m_requesting_conns[conn->Id()] = conn;
+
+    LOG_DEBUG("IssueCommand successfully");
+}
+
+void RedisClient::IssueCommand(const InetAddr &server_addr, const RedisReplyCallback &callback,
+        int64_t timeout_ms, int argc, const char **argv, const size_t *argvlen)
+{
+    RedisConnectionPtr conn = GetConn(server_addr);
+    if (!conn) {
+        // no idle connections and connect failed??
+        // run callback in next loop
+        m_event_loop->Post(std::bind(callback, (redisReply *)NULL));
+        return;
+    }
+
+    assert(m_requesting_conns.count(conn->Id()) == 0);
+
+    int status = conn->IssueCommand(
+            std::bind(&RedisClient::OnRedisReply, this, callback, conn, _1),
+            timeout_ms, argc, argv, argvlen);
     if (status != CUBE_OK) {
         // issue command failed, run callback in next loop
         // and close the connection

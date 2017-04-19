@@ -18,8 +18,12 @@ class RedisClient {
         RedisClient(EventLoop *event_loop);
         ~RedisClient();
 
-        void IssueCommand(const InetAddr &server_addr,
-                const RedisReplyCallback &callback, const char *format, ...);
+        void IssueCommand(const InetAddr &server_addr, const RedisReplyCallback &callback,
+                int64_t timeout_ms, const char *format, ...);
+        void IssueCommand(const InetAddr &server_addr, const RedisReplyCallback &callback,
+                int64_t timeout_ms, const char *format, va_list ap);
+        void IssueCommand(const InetAddr &server_addr, const RedisReplyCallback &callback,
+                int64_t timeout_ms, int argc, const char **argv, const size_t *argvlen);
 
     private:
         RedisConnectionPtr Connect(const InetAddr &server_addr);
