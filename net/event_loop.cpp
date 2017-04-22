@@ -146,12 +146,12 @@ void EventLoop::Stop() {
 
 void EventLoop::HandleEvents(int revents) {
     uint64_t dummy = 0;
-    ::read(m_wakeup_fd, &dummy, sizeof(dummy));
+    (void)::read(m_wakeup_fd, &dummy, sizeof(dummy));
 }
 
 void EventLoop::WakeUp() {
     uint64_t one = 1;
-    ::write(m_wakeup_fd, &one, sizeof(one));
+    (void)::write(m_wakeup_fd, &one, sizeof(one));
 }
 
 }
