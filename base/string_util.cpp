@@ -1,6 +1,7 @@
 #include "string_util.h"
 
 #include <stdarg.h>
+#include <stdlib.h>
 
 namespace cube {
 
