@@ -4,7 +4,6 @@
 #include <errno.h>
 #include <string.h>
 
-#include "base/log.h"
 #include "event_loop.h"
 #include "eventor.h"
 #include "socket.h"
@@ -66,7 +65,6 @@ void Acceptor::HandleRead() {
         m_accept_callback(fd);
     } else {
         // error
-        LOG_ERROR("accept failed");
     }
 }
 

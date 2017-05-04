@@ -1,4 +1,3 @@
-#include "base/log.h"
 #include "net/event_loop.h"
 #include "net/inet_addr.h"
 #include "net/buffer.h"

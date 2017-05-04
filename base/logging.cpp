@@ -1,8 +1,10 @@
 #include <stdio.h>
 
-#include "logger.h"
+#include "logging.h"
 
 namespace cube {
+
+namespace logging {
 
 Logger::Logger()
     : m_log_level(LogLevel_Trace) {
@@ -76,6 +78,22 @@ EmptyLogger::~EmptyLogger() {
 
 void EmptyLogger::Output(const char *format, va_list args) {
     // do nothing
+}
+
+#ifdef NDEBUG
+LoggerPtr g_logger(new EmptyLogger);
+#else
+LoggerPtr g_logger(new StdoutLogger);
+#endif
+
+LoggerPtr GetLogger() {
+    return g_logger;
+}
+
+void SetLogger(LoggerPtr logger) {
+    g_logger = logger;
+}
+
 }
 
 }

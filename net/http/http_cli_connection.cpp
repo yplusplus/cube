@@ -1,4 +1,4 @@
-#include "base/log.h"
+#include "base/logging.h"
 #include "base/string_util.h"
 #include "net/event_loop.h"
 #include "http_cli_connection.h"
@@ -20,7 +20,7 @@ HTTPClientConnection::HTTPClientConnection(EventLoop *event_loop, TcpConnectionP
 }
 
 HTTPClientConnection::~HTTPClientConnection() {
-    LOG_DEBUG("~HTTPClientConnection");
+    M_LOG_DEBUG("~HTTPClientConnection");
 }
 
 bool HTTPClientConnection::SendRequest(const HTTPRequest &request, const ResponseCallback &response_callback) {
@@ -59,7 +59,7 @@ void HTTPClientConnection::OnDisconnect(TcpConnectionPtr conn) {
 void HTTPClientConnection::OnHeaders(TcpConnectionPtr conn, Buffer *buffer) {
     bool succ = ParseHeaders(buffer);
     if (!succ) {
-        LOG_ERROR("conn[%lu] parse headers falied", conn->Id());
+        M_LOG_ERROR("conn[%lu] parse headers falied", conn->Id());
         conn->Close();
         return;
     }

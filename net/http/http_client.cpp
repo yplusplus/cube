@@ -1,4 +1,4 @@
-#include "base/log.h"
+#include "base/logging.h"
 
 #include "net/event_loop.h"
 #include "net/socket.h"
@@ -44,7 +44,7 @@ HTTPClientConnectionPtr HTTPClient::GetConn(const InetAddr &addr) {
             conn.reset();
         } else {
             // find a idle connection
-            LOG_INFO("found a idle connection PeerAddr[%s], Id[%lu]",
+            M_LOG_INFO("found a idle connection PeerAddr[%s], Id[%lu]",
                     conn->PeerAddr().IpPort().c_str(), conn->Id());
             break;
         }
@@ -72,7 +72,7 @@ HTTPClientConnectionPtr HTTPClient::GetConn(const InetAddr &addr) {
 }
 
 void HTTPClient::PutConn(HTTPClientConnectionPtr conn) {
-    LOG_INFO("put a idle connection PeerAddr[%s], Id[%lu]",
+    M_LOG_INFO("put a idle connection PeerAddr[%s], Id[%lu]",
             conn->PeerAddr().IpPort().c_str(), conn->Id());
 
     auto &idle_list = m_idle_conns[conn->PeerAddr().IpPort()];
