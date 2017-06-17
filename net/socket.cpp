@@ -64,7 +64,7 @@ int CreateNonBlockStreamSocket() {
 
 bool SetNonBlocking(int sockfd, bool on) {
     int ret = ::fcntl(sockfd, F_GETFL, 0);
-    if (ret) {
+    if (ret < 0) {
         // error
         return false;
     }
@@ -76,7 +76,7 @@ bool SetNonBlocking(int sockfd, bool on) {
     else ret &= ~O_NONBLOCK;
 
     ret = ::fcntl(sockfd, F_SETFL, ret);
-    if (ret) {
+    if (ret < 0) {
         // error
         return false;
     }
