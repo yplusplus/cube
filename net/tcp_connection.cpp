@@ -2,7 +2,7 @@
 
 #include "tcp_connection.h"
 
-#include "base/log.h"
+#include "base/logging.h"
 #include "base/string_util.h"
 #include "time_util.h"
 #include "event_loop.h"
@@ -36,7 +36,7 @@ TcpConnection::TcpConnection(EventLoop *event_loop,
 }
 
 TcpConnection::~TcpConnection() {
-    LOG_DEBUG("~TcpConnection [%lu]", m_conn_id);
+    M_LOG_DEBUG("~TcpConnection conn[%lu]", m_conn_id);
     // ensure to release all resources.
     assert(Closed());
     if (!Closed())
@@ -197,7 +197,7 @@ void TcpConnection::HandleRead() {
                 has_error = true;
             } else if (nread == 0) {
                 // close by peer
-                //LOG_DEBUG("conn[%lu] closed by peer", Id());
+                M_LOG_DEBUG("conn[%lu] closed by peer", Id());
                 HandleClose();
             } else {
                 OnRead();
@@ -240,12 +240,12 @@ int TcpConnection::HandleConnect() {
 
     if (Closed()) return CUBE_ERR;
 
-    //LOG_DEBUG("conn[%lu] connecting!", Id());
+    M_LOG_DEBUG("conn[%lu] connecting!", Id());
 
     int saved_error = 0;
     int ret = sockets::GetSocketError(m_sock->Fd(), saved_error);
     if (ret || saved_error) {
-        //LOG_ERROR("error on connecting, error=%d", saved_error);
+        M_LOG_ERROR("conn[%lu] error on connecting, error=%d", m_conn_id, saved_error);
         if (m_connect_callback)
             m_connect_callback(shared_from_this(), CUBE_ERR);
         HandleError();

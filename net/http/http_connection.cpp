@@ -1,4 +1,4 @@
-#include "base/log.h"
+#include "base/logging.h"
 #include "base/string_util.h"
 
 #include "net/event_loop.h"
@@ -26,7 +26,7 @@ HTTPConnection::HTTPConnection(EventLoop *event_loop, HTTPServer *server, const 
 }
 
 HTTPConnection::~HTTPConnection() {
-    LOG_DEBUG("~HTTPConnection");
+    M_LOG_DEBUG("~HTTPConnection");
 }
 
 bool HTTPConnection::SendResponse(const HTTPResponse &response) {
@@ -48,7 +48,7 @@ void HTTPConnection::OnHeaders(TcpConnectionPtr conn, Buffer *buffer) {
 
     bool succ = ParseHeaders(buffer);
     if (!succ) {
-        LOG_ERROR("conn[%lu] parse headers falied", conn->Id());
+        M_LOG_ERROR("conn[%lu] parse headers falied", conn->Id());
         conn->Close();
         return;
     }
@@ -68,7 +68,7 @@ bool HTTPConnection::ParseHeaders(Buffer *buffer) {
     const std::string debug_str(buffer->Peek(), buffer->ReadableBytes());
     const char *eoh = buffer->Find("\r\n\r\n");
     if (eoh == NULL) {
-        LOG_ERROR("can not find CRLFCRLF");
+        M_LOG_ERROR("can not find CRLFCRLF");
         return false;
     }
 
@@ -76,7 +76,7 @@ bool HTTPConnection::ParseHeaders(Buffer *buffer) {
     std::vector<std::string> lines;
     ::cube::strings::Split(header_str, "\r\n", lines);
     if (lines.empty()) {
-        LOG_ERROR("no request line");
+        M_LOG_ERROR("no request line");
         return false;
     }
 
@@ -85,7 +85,7 @@ bool HTTPConnection::ParseHeaders(Buffer *buffer) {
     std::vector<std::string> fields;
     ::cube::strings::Split(lines[0], " ", fields);
     if (fields.size() != 3) {
-        LOG_ERROR("request line format invalid, %s", lines[0].c_str());
+        M_LOG_ERROR("request line format invalid, %s", lines[0].c_str());
         return false;
     }
     m_request.SetMethod(fields[0]);

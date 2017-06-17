@@ -2,8 +2,22 @@
 #define __CUBE_LOGGER_H__
 
 #include <stdarg.h>
+#include <memory>
+
+#define M_LOG(level, format, args...) \
+    do { \
+            ::cube::logging::GetLogger()->level("%s|%d|%s|" format "\n", __FILE__, __LINE__, __FUNCTION__ , ##args); \
+    } while(false)
+
+#define M_LOG_DEBUG(format, args...) M_LOG(Debug, format, ##args)
+#define M_LOG_TRACE(format, args...) M_LOG(Trace, format, ##args)
+#define M_LOG_WARN(format, args...)  M_LOG(Warn, format, ##args)
+#define M_LOG_ERROR(format, args...) M_LOG(Error, format, ##args)
+#define M_LOG_INFO(format, args...)  M_LOG(Info, format, ##args)
 
 namespace cube {
+
+namespace logging {
 
 class Logger {
     public:
@@ -59,6 +73,13 @@ class EmptyLogger : public Logger {
     protected:
         virtual void Output(const char *format, va_list args);
 };
+
+typedef std::shared_ptr<Logger> LoggerPtr;
+
+LoggerPtr GetLogger();
+void SetLogger(LoggerPtr logger);
+
+}
 
 }
 

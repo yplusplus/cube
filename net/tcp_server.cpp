@@ -1,5 +1,5 @@
+#include "base/logging.h"
 #include "tcp_server.h"
-#include "base/log.h"
 #include "event_loop.h"
 #include "acceptor.h"
 #include "tcp_connection.h"
@@ -52,7 +52,7 @@ void TcpServer::OnAccept(int sockfd) {
     assert(m_new_connection_callback);
     m_new_connection_callback(conn);
 
-    LOG_INFO("New Connection[%lu] in TcpServer localAddr[%s], peerAddr[%s]",
+    M_LOG_INFO("New Connection[%lu] in TcpServer localAddr[%s], peerAddr[%s]",
             conn->Id(), local_addr.IpPort().c_str(), peer_addr.IpPort().c_str());
 }
 
