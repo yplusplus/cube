@@ -7,7 +7,7 @@
 #include "poller.h"
 #include "timer_queue.h"
 #include "time_util.h"
-#include "base/log.h"
+#include "base/logging.h"
 
 using namespace std::placeholders;
 
@@ -146,12 +146,14 @@ void EventLoop::Stop() {
 
 void EventLoop::HandleEvents(int revents) {
     uint64_t dummy = 0;
-    (void)::read(m_wakeup_fd, &dummy, sizeof(dummy));
+    ssize_t ret = ::read(m_wakeup_fd, &dummy, sizeof(dummy));
+    (void)ret;
 }
 
 void EventLoop::WakeUp() {
     uint64_t one = 1;
-    (void)::write(m_wakeup_fd, &one, sizeof(one));
+    ssize_t ret = ::write(m_wakeup_fd, &one, sizeof(one));
+    (void)ret;
 }
 
 }
