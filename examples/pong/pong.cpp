@@ -41,7 +41,7 @@ void OnPing(TcpConnectionPtr conn, Buffer *buffer) {
 }
 
 void ShowStat() {
-    int64_t now_ms = TimeUtil::CurrentTimeMs();
+    int64_t now_ms = TimeUtil::CurrentTimeMillis();
     cout << now_ms << ": " << g_pings << " qps" << endl;
     g_pings = 0;
 }
