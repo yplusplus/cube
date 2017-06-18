@@ -2,6 +2,7 @@
 #define __CUBE_TIMER_QUEUE_H__
 
 #include <set>
+#include <map>
 #include <cstdint>
 #include <functional>
 
@@ -39,7 +40,7 @@ class TimerQueue {
 
     private:
         std::set<Timer> m_timers;
-        std::set<TimerId> m_deleted_timers;
+        std::map<TimerId, int64_t> m_timer_expiration;
 };
 
 }
