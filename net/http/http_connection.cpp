@@ -125,6 +125,7 @@ void HTTPConnection::OnBody(TcpConnectionPtr conn, Buffer *buffer) {
 }
 
 void HTTPConnection::HandleRequest() {
+    // TODO: need to call request_call when called in HandleClose
     if (Closed())
         return;
 
