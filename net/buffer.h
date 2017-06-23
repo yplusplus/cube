@@ -67,14 +67,20 @@ class Buffer {
         // After MakeSpace(n), at least n bytes can be written to the
         // buffer without another allocation.
         void MakeSpace(size_t n) {
-            if (buffer.size() - ReadableBytes() >= n) {
+            if (WritableBytes() >= n) {
+                return;
+            } else if (buffer.size() - ReadableBytes() >= n) {
                 size_t readable = ReadableBytes();
                 std::copy(BeginRead(), BeginWrite(), Begin()); 
                 read_index = 0;
                 write_index = read_index + readable;
             } else {
-                // TODO
-                buffer.resize(write_index + n);
+                size_t readable = ReadableBytes();
+                std::vector<char> b(readable + n);
+                std::copy(BeginRead(), BeginWrite(), b.data());
+                std::swap(buffer, b);
+                read_index = 0;
+                write_index = read_index + readable;
             }
         }
 
