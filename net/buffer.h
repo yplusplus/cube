@@ -52,6 +52,8 @@ class Buffer {
 
         ssize_t ReadFromFd(int fd);
 
+        void Swap(Buffer &rhs);
+
     private:
         static const char *CRLF;
 

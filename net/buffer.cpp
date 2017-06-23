@@ -62,5 +62,11 @@ ssize_t Buffer::ReadFromFd(int fd) {
     return nread;
 }
 
+void Buffer::Swap(Buffer &rhs) {
+    std::swap(buffer, rhs.buffer);
+    std::swap(read_index, rhs.read_index);
+    std::swap(write_index, rhs.write_index);
+}
+
 }
 
