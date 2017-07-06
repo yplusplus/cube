@@ -9,7 +9,7 @@ using namespace std::placeholders;
 
 namespace cube {
 
-TcpServer::TcpServer(EventLoop *event_loop, const InetAddr &server_addr) 
+TcpServer::TcpServer(EventLoop *event_loop, const InetAddr &server_addr)
     : m_event_loop(event_loop),
     m_server_addr(server_addr) {
 }
@@ -22,7 +22,7 @@ bool TcpServer::Start() {
                 m_event_loop,
                 m_server_addr,
                 std::bind(&TcpServer::OnAccept, this, _1)));
-    
+
     bool ret = m_acceptor->Listen();
     if (!ret) {
         m_err_msg = m_acceptor->ErrMsg();
@@ -39,7 +39,10 @@ void TcpServer::Stop() {
 }
 
 void TcpServer::OnAccept(int sockfd) {
-    // new connection
+    // 新的客户端连接成功建立后，将执行以下操作：
+    // 准备执行回调函数m_new_connection_callback
+
+    // 获取客户端和服务端地址信息，构造一个TCP连接对象
     InetAddr local_addr(sockets::GetLocalAddr(sockfd));
     InetAddr peer_addr(sockets::GetPeerAddr(sockfd));
     TcpConnectionPtr conn(new TcpConnection(
@@ -49,6 +52,8 @@ void TcpServer::OnAccept(int sockfd) {
                 peer_addr));
 
     m_event_loop->Post(std::bind(&TcpConnection::Initialize, conn));
+
+    // 执行回调函数
     assert(m_new_connection_callback);
     m_new_connection_callback(conn);
 
