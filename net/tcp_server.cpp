@@ -18,6 +18,7 @@ TcpServer::~TcpServer() {
 }
 
 bool TcpServer::Start() {
+    // 构造acceptor并开始监听
     m_acceptor.reset(new Acceptor(
                 m_event_loop,
                 m_server_addr,
@@ -32,15 +33,17 @@ bool TcpServer::Start() {
 }
 
 void TcpServer::Stop() {
-    // stop the acceptor
+    // 停止accept
     m_acceptor->Stop();
-
+    // 停止事件循环监听
     m_event_loop->Stop();
 }
 
 void TcpServer::OnAccept(int sockfd) {
-    // 新的客户端连接成功建立后，将执行以下操作：
-    // 准备执行回调函数m_new_connection_callback
+    // 新的客户端连接成功建立后, 执行回调函数m_new_connection_callback
+
+    // 同时，OnAccept函数本身，会作为回调函数注册到acceptor中，当accept
+    // 成功返回时被执行
 
     // 获取客户端和服务端地址信息，构造一个TCP连接对象
     InetAddr local_addr(sockets::GetLocalAddr(sockfd));
