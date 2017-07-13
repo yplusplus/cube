@@ -8,6 +8,7 @@
 
 namespace cube {
 
+// tcp connection中的读写缓冲区
 class Buffer {
     public:
         static const size_t INITIAL_SIZE = 1024;        // 1K
@@ -71,7 +72,7 @@ class Buffer {
                 return;
             } else if (buffer.size() - ReadableBytes() >= n) {
                 size_t readable = ReadableBytes();
-                std::copy(BeginRead(), BeginWrite(), Begin()); 
+                std::copy(BeginRead(), BeginWrite(), Begin());
                 read_index = 0;
                 write_index = read_index + readable;
             } else {

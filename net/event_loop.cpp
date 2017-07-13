@@ -21,7 +21,7 @@ static int CreateEventFd() {
     return event_fd;
 }
 
-EventLoop::EventLoop() 
+EventLoop::EventLoop()
     : m_thread_id(std::this_thread::get_id()),
     m_wakeup_fd(CreateEventFd()),
     m_wakeup_eventor(new Eventor(this, m_wakeup_fd)),
@@ -96,6 +96,7 @@ void EventLoop::Loop() {
 }
 
 int EventLoop::LoopOnce(int poll_timeout_ms) {
+    // 一次事件轮询
     AssertInLoopThread();
 
     int result = 0;
@@ -107,6 +108,7 @@ int EventLoop::LoopOnce(int poll_timeout_ms) {
         tasks.swap(m_tasks);
     }
 
+    // 执行定时任务
     for (auto it = tasks.begin(); it != tasks.end(); it++) {
         (*it)();
     }
@@ -115,9 +117,9 @@ int EventLoop::LoopOnce(int poll_timeout_ms) {
     // timer queue
     int64_t next_expiration = -1;
     result += m_timer_queue->Expire(now_ms, next_expiration);
-    
+
     // poller
-    if (next_expiration > now_ms 
+    if (next_expiration > now_ms
             && (poll_timeout_ms == -1 || (next_expiration - now_ms) < poll_timeout_ms)) {
         poll_timeout_ms = next_expiration - now_ms;
     }

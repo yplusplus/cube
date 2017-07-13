@@ -63,6 +63,7 @@ ssize_t Buffer::ReadFromFd(int fd) {
 }
 
 void Buffer::Swap(Buffer &rhs) {
+    // 交换其中的buffer数组和读写下标
     std::swap(buffer, rhs.buffer);
     std::swap(read_index, rhs.read_index);
     std::swap(write_index, rhs.write_index);
