@@ -36,6 +36,7 @@ class TcpServer {
 
         std::unique_ptr<Acceptor> m_acceptor;
 
+        // 新的客户端连接建立后的的回调函数
         NewConnectionCallback m_new_connection_callback;
         std::string m_err_msg;
 };
