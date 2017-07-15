@@ -70,7 +70,7 @@ cube是用C++开发一个网络库，基于Reactor编程模型开发，由事件
 
 ### 编程接口
 
-**EventLoop**：封装了事件轮询
+* **EventLoop**：封装了事件轮询
 
 ```cpp
 class EventLoop {
