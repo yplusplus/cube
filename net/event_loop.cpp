@@ -67,22 +67,28 @@ void EventLoop::RemoveEvents(Eventor *eventor) {
 }
 
 TimerId EventLoop::RunAt(const Task &task, int64_t expiration_ms) {
+    // 添加一次执行的定时任务，expiration_ms执行
     return m_timer_queue->AddTimer(task, expiration_ms, 0);
 }
 
 TimerId EventLoop::RunAfter(const Task &task, int64_t delay_ms) {
+    // 添加一次执行的定时任务，delay_ms后执行
     return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMillis() + delay_ms, 0);
 }
 
 TimerId EventLoop::RunPeriodic(const Task &task, int64_t interval_ms) {
+    // 添加循环执行的任务，循环时间间隔是interval_ms, 开始时间是当前时间+interval_ms
     return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMillis() + interval_ms, interval_ms);
 }
 
+
 TimerId EventLoop::RunPeriodic(const Task &task, int64_t expiration_ms, int64_t interval_ms) {
+    // 添加循环执行的任务，开始时间是expiration_ms，循环时间间隔是interval_ms
     return m_timer_queue->AddTimer(task, expiration_ms, interval_ms);
 }
 
 void EventLoop::CancelTimer(TimerId timer_id) {
+    // 删除一个定时任务
     m_timer_queue->RemoveTimer(timer_id);
 }
 
