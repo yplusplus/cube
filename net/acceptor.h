@@ -28,13 +28,15 @@ class Acceptor {
         void HandleRead();
 
     private:
+        // 反向指针
         EventLoop *m_event_loop;
 
         std::unique_ptr<Socket> m_sock;
         std::unique_ptr<Eventor> m_eventor;
 
+        // 监听地址
         InetAddr m_listen_addr;
-
+        // accept成功返回时的回调函数
         AcceptCallback m_accept_callback;
         std::string m_err_msg;
 };

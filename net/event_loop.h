@@ -20,6 +20,7 @@ class TimerQueue;
 
 class EventLoop {
     public:
+        // 回调函数，用户可以将自己的逻辑注册到事件循环中
         typedef std::function<void()> Task;
 
         EventLoop();
@@ -59,22 +60,27 @@ class EventLoop {
 
     private:
         // thread id
+        // 事件轮询线程的线程ID
         std::thread::id m_thread_id;
 
-        // wake up 
+        // wake up
+        // linux event fd，用于唤醒事件循环
         int m_wakeup_fd;
         std::unique_ptr<Eventor> m_wakeup_eventor;
 
         // poller
+        // poller是对linux epoll的封装，用户管理事件
         std::unique_ptr<Poller> m_poller;
 
         // timer queue
+        // 定时任务队列，用于执行定时任务
         std::unique_ptr<TimerQueue> m_timer_queue;
-        
+
         // task
+        // Task实际是回调函数，用户的执行逻辑
         std::mutex m_tasks_mutex;
         std::vector<Task> m_tasks;
-        
+
         // running flag
         bool m_running;
 };
