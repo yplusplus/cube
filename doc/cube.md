@@ -69,7 +69,8 @@ cube是用C++开发一个网络库，基于Reactor编程模型开发，由事件
     可用于TCP服务器和客户端编程。当可写事件发生时，TcpConnection内部将写缓冲区的数据写入socket句柄。写操作结果后，若写缓冲区为空，表示一轮写操作完成，将执行该函数。
 
 ### 编程接口
-**EventLoop：**封装了事件轮询
+
+**EventLoop**：封装了事件轮询
 
 ```cpp
 class EventLoop {
