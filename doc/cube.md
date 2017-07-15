@@ -78,9 +78,6 @@ class EventLoop {
         // 定时任务中的业务逻辑，执行定时任务实际就是在执行Task
         typedef std::function<void()> Task;
 
-        EventLoop();
-        ~EventLoop();
-
         // 返回指向EventLoop自身的指针，该指针被__thread修饰过，是一个线程局部变量
         static EventLoop *Current();
 
@@ -106,7 +103,6 @@ class EventLoop {
         // 调用该函数时要确保fd已在Poller中注册，否则会被assert
         // 只能在轮询线程中调用
         void RemoveEvents(Eventor *e);
-
 
 
         // 以下接口用于操作定时任务
@@ -137,16 +133,13 @@ class EventLoop {
 };
 ```
 
-**TcpServer：**封装了服务器编程的基本操作和流程，基于cube开发服务器应用时可以包含TcpServer
+* **TcpServer**：封装了服务器编程的基本操作和流程，基于cube开发服务器应用时可以包含TcpServer
 
 ```cpp
 class TcpServer {
     public:
         // TcpServer由EventLoop驱动起来，另外需要提供一个服务器监听地址
         TcpServer(EventLoop *event_loop, const InetAddr &server_addr);
-
-        // 析构TcpServer
-        ~TcpServer();
 
         // 用户通过该接口注册NewConnectionCallback
         void SetNewConnectionCallback(const NewConnectionCallback &cb);
@@ -165,13 +158,12 @@ class TcpServer {
 };
 ```
 
-**TcpConnection：**封装了TCP连接的相关状态和操作，用户用过操作TcpConenction来读取和接受数据并完成自己的业务逻辑
+* **TcpConnection**：封装了TCP连接的相关状态和操作，用户用过操作TcpConenction来读取和接受数据并完成自己的业务逻辑
 
 ```cpp
 class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     public:
         TcpConnection(EventLoop *event_loop, int sockfd, const InetAddr &local_addr, const InetAddr &peer_addr);
-        ~TcpConnection();
 
         // 用于设置ConnectCallback，DisconnectCallback，WriteCompleteCallback
         void SetConnectCallback(const ConnectCallback &cb);
