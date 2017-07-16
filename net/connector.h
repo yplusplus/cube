@@ -3,6 +3,8 @@
 
 namespace cube {
 
+namespace net {
+
 class InetAddr;
 
 class Connector {
@@ -12,4 +14,5 @@ class Connector {
 
 }
 
+}
 #endif

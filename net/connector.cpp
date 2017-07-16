@@ -7,6 +7,8 @@
 
 namespace cube {
 
+namespace net {
+
 int Connector::Connect(const InetAddr &server_addr, int &sockfd) {
     sockfd = sockets::CreateNonBlockStreamSocket();
     if (sockfd < 0) {
@@ -24,6 +26,8 @@ int Connector::Connect(const InetAddr &server_addr, int &sockfd) {
     }
 
     return CUBE_OK;
+}
+
 }
 
 }

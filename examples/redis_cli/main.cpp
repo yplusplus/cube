@@ -5,12 +5,14 @@
 #include "hiredis.h"
 #include "async.h"
 
+#include "base/logging.h"
 #include "net/inet_addr.h"
 #include "net/event_loop.h"
 #include "net/redis/redis_client.h"
 
 using namespace std;
 using namespace cube;
+using namespace cube::net;
 using namespace cube::redis;
 using namespace std::placeholders;
 
@@ -39,6 +41,7 @@ void OnRedisReply(redisReply *reply) {
 }
 
 int main() {
+    ::cube::logging::GetLogger()->Info("main %d", 1);
     signal(SIGINT, HandleSignal);
     const char *argv[3] = {"SET", "cube", "cUbE9"};
     const size_t argvlen[3] = {3, 4, 5};

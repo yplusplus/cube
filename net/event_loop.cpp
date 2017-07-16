@@ -2,16 +2,18 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include "base/time_util.h"
+#include "base/timer_queue.h"
 #include "event_loop.h"
 #include "eventor.h"
 #include "poller.h"
-#include "timer_queue.h"
-#include "time_util.h"
 #include "base/logging.h"
 
 using namespace std::placeholders;
 
 namespace cube {
+
+namespace net {
 
 static int CreateEventFd() {
     int event_fd = ::eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
@@ -154,6 +156,8 @@ void EventLoop::WakeUp() {
     uint64_t one = 1;
     ssize_t ret = ::write(m_wakeup_fd, &one, sizeof(one));
     (void)ret;
+}
+
 }
 
 }

@@ -5,6 +5,8 @@
 
 namespace cube {
 
+namespace net {
+
 Eventor::Eventor(EventLoop *event_loop, int fd)
     : m_event_loop(event_loop),
     m_fd(fd),
@@ -28,6 +30,8 @@ void Eventor::Update() {
 void Eventor::Remove() {
     m_events = 0;
     m_event_loop->RemoveEvents(this);
+}
+
 }
 
 }

@@ -1,5 +1,5 @@
 #include "base/logging.h"
-#include "base/string_util.h"
+#include "base/strings.h"
 
 #include "net/event_loop.h"
 
@@ -14,7 +14,10 @@ namespace cube {
 
 namespace http {
 
-HTTPConnection::HTTPConnection(EventLoop *event_loop, HTTPServer *server, const TcpConnectionPtr &conn, const RequestCallback &request_callback)
+HTTPConnection::HTTPConnection(::cube::net::EventLoop *event_loop,
+        HTTPServer *server,
+        const ::cube::net::TcpConnectionPtr &conn,
+        const RequestCallback &request_callback)
     : m_event_loop(event_loop),
     m_server(server),
     m_conn(conn),
@@ -35,15 +38,15 @@ bool HTTPConnection::SendResponse(const HTTPResponse &response) {
             std::bind(&HTTPConnection::OnWriteComplete, this, _1, keep_alive));
 }
 
-void HTTPConnection::OnConnect(TcpConnectionPtr conn, int status) {
+void HTTPConnection::OnConnect(::cube::net::TcpConnectionPtr conn, int status) {
     // do nothing
 }
 
-void HTTPConnection::OnDisconnect(TcpConnectionPtr conn) {
+void HTTPConnection::OnDisconnect(::cube::net::TcpConnectionPtr conn) {
     m_server->RemoveConnection(shared_from_this());
 }
 
-void HTTPConnection::OnHeaders(TcpConnectionPtr conn, Buffer *buffer) {
+void HTTPConnection::OnHeaders(::cube::net::TcpConnectionPtr conn, Buffer *buffer) {
     m_request.Reset();
 
     bool succ = ParseHeaders(buffer);
@@ -108,7 +111,7 @@ bool HTTPConnection::ParseHeaders(Buffer *buffer) {
     return true;
 }
 
-void HTTPConnection::OnBody(TcpConnectionPtr conn, Buffer *buffer) {
+void HTTPConnection::OnBody(::cube::net::TcpConnectionPtr conn, Buffer *buffer) {
     // TODO Parse body according to ContentType
     size_t body_len = m_request.ContentLength();
     assert(body_len > m_request.Body().length());
@@ -132,7 +135,7 @@ void HTTPConnection::HandleRequest() {
     m_request_callback(shared_from_this(), m_request);
 }
 
-void HTTPConnection::OnWriteComplete(TcpConnectionPtr conn, bool keep_alive) {
+void HTTPConnection::OnWriteComplete(::cube::net::TcpConnectionPtr conn, bool keep_alive) {
     //LOG_DEBUG("conn[%lu] keepalive[%d]", conn->Id(), keep_alive);
     if (!keep_alive) {
         conn->Close();

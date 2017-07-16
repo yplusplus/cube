@@ -1,6 +1,6 @@
+#include "base/buffer.h"
 #include "net/event_loop.h"
 #include "net/inet_addr.h"
-#include "net/buffer.h"
 #include "http_connection.h"
 #include "http_request.h"
 #include "http_response.h"
@@ -12,8 +12,8 @@ namespace cube {
 
 namespace http {
 
-HTTPServer::HTTPServer(EventLoop *event_loop,
-        const InetAddr &server_addr) 
+HTTPServer::HTTPServer(::cube::net::EventLoop *event_loop,
+        const ::cube::net::InetAddr &server_addr) 
     : m_event_loop(event_loop),
     m_server(m_event_loop, server_addr),
     m_enable_keepalive(true) {
@@ -32,7 +32,7 @@ void HTTPServer::Stop() {
     m_server.Stop();
 }
 
-void HTTPServer::OnNewConnection(TcpConnectionPtr conn) {
+void HTTPServer::OnNewConnection(::cube::net::TcpConnectionPtr conn) {
     // a new connection coming
     HTTPConnectionPtr http_conn(new HTTPConnection(
                 m_event_loop, this, conn,

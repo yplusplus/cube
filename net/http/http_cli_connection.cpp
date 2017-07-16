@@ -1,5 +1,5 @@
 #include "base/logging.h"
-#include "base/string_util.h"
+#include "base/strings.h"
 #include "net/event_loop.h"
 #include "http_cli_connection.h"
 #include "http_request.h"
@@ -10,7 +10,8 @@ namespace cube {
 
 namespace http {
 
-HTTPClientConnection::HTTPClientConnection(EventLoop *event_loop, TcpConnectionPtr conn)
+HTTPClientConnection::HTTPClientConnection(::cube::net::EventLoop *event_loop,
+        ::cube::net::TcpConnectionPtr conn)
     : m_event_loop(event_loop),
     m_conn(conn),
     m_requesting(false) {
@@ -36,13 +37,13 @@ bool HTTPClientConnection::SendRequest(const HTTPRequest &request, const Respons
     return true;
 }
 
-void HTTPClientConnection::OnConnect(TcpConnectionPtr conn, int status) {
+void HTTPClientConnection::OnConnect(::cube::net::TcpConnectionPtr conn, int status) {
     // connect failed
     if (status != CUBE_OK) {
     }
 }
 
-void HTTPClientConnection::OnDisconnect(TcpConnectionPtr conn) {
+void HTTPClientConnection::OnDisconnect(::cube::net::TcpConnectionPtr conn) {
     // run response callback with NULL response
     if (m_response_callback) {
         //m_event_loop->Post(std::bind(response_callback, shared_from_this(), (const HTTPResponse *)NULL));
@@ -56,7 +57,7 @@ void HTTPClientConnection::OnDisconnect(TcpConnectionPtr conn) {
         m_disconnect_callback(shared_from_this());
 }
 
-void HTTPClientConnection::OnHeaders(TcpConnectionPtr conn, Buffer *buffer) {
+void HTTPClientConnection::OnHeaders(::cube::net::TcpConnectionPtr conn, Buffer *buffer) {
     bool succ = ParseHeaders(buffer);
     if (!succ) {
         M_LOG_ERROR("conn[%lu] parse headers falied", conn->Id());
@@ -109,7 +110,7 @@ bool HTTPClientConnection::ParseHeaders(Buffer *buffer) {
     return true;
 }
 
-void HTTPClientConnection::OnBody(TcpConnectionPtr conn, Buffer *buffer) {
+void HTTPClientConnection::OnBody(::cube::net::TcpConnectionPtr conn, Buffer *buffer) {
     // TODO Parse body according to ContentType
     size_t body_len = m_response.ContentLength();
     if (buffer->ReadableBytes() < body_len) {

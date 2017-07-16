@@ -10,14 +10,15 @@ namespace http {
 
 class HTTPServer {
     public:
-        HTTPServer(EventLoop *event_loop, const InetAddr &server_addr);
+        HTTPServer(::cube::net::EventLoop *event_loop,
+                const ::cube::net::InetAddr &server_addr);
         ~HTTPServer();
 
         void SetRequestCallback(const RequestCallback &cb) { m_request_callback = cb; }
         bool Start();
         void Stop();
 
-        const InetAddr &ServerAddr() const { return m_server.ServerAddr(); }
+        const ::cube::net::InetAddr &ServerAddr() const { return m_server.ServerAddr(); }
 
         bool KeepAlive() const { return m_enable_keepalive; }
         void SetKeepAlive(bool on) { m_enable_keepalive = on; }
@@ -25,13 +26,13 @@ class HTTPServer {
         void RemoveConnection(HTTPConnectionPtr conn);
 
     private:
-        void OnNewConnection(TcpConnectionPtr conn);
+        void OnNewConnection(::cube::net::TcpConnectionPtr conn);
         void OnRequest(HTTPConnectionPtr conn, const HTTPRequest &request);
 
     private:
-        EventLoop *m_event_loop;
+        ::cube::net::EventLoop *m_event_loop;
 
-        TcpServer m_server;
+        ::cube::net::TcpServer m_server;
 
         RequestCallback m_request_callback;
 

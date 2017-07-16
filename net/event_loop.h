@@ -9,6 +9,10 @@
 
 namespace cube {
 
+class TimerQueue;
+
+namespace net {
+
 #define CUBE_OK 0
 #define CUBE_ERR -1
 
@@ -16,7 +20,6 @@ typedef uint64_t TimerId;
 
 class Eventor;
 class Poller;
-class TimerQueue;
 
 class EventLoop {
     public:
@@ -78,6 +81,8 @@ class EventLoop {
         // running flag
         bool m_running;
 };
+
+}
 
 }
 

@@ -8,6 +8,8 @@
 
 namespace cube {
 
+namespace net {
+
 class EventLoop;
 class Eventor;
 class Socket;
@@ -38,6 +40,8 @@ class Acceptor {
         AcceptCallback m_accept_callback;
         std::string m_err_msg;
 };
+
+}
 
 }
 #endif

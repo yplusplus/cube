@@ -3,11 +3,14 @@
 
 #include <memory>
 
+#include "base/buffer.h"
+
 #include "callbacks.h"
 #include "inet_addr.h"
-#include "buffer.h"
 
 namespace cube {
+
+namespace net {
 
 class EventLoop;
 class Eventor;
@@ -84,8 +87,8 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
         ConnState m_state;
 
-        Buffer m_input_buffer;
-        Buffer m_output_buffer;
+        ::cube::Buffer m_input_buffer;
+        ::cube::Buffer m_output_buffer;
 
         std::string m_read_delimiter;
         int m_read_bytes;
@@ -101,6 +104,8 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
 typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
 typedef std::weak_ptr<TcpConnection> TcpConnectionWPtr;
+
+}
 
 }
 

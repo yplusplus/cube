@@ -13,7 +13,7 @@ namespace cube {
 
 namespace http {
 
-HTTPClient::HTTPClient(EventLoop *event_loop)
+HTTPClient::HTTPClient(::cube::net::EventLoop *event_loop)
     : m_event_loop(event_loop) {
 }
 
@@ -32,7 +32,7 @@ HTTPClient::~HTTPClient() {
     }
 }
 
-HTTPClientConnectionPtr HTTPClient::GetConn(const InetAddr &addr) {
+HTTPClientConnectionPtr HTTPClient::GetConn(const ::cube::net::InetAddr &addr) {
     HTTPClientConnectionPtr conn;
 
     auto &idle_list = m_idle_conns[addr.IpPort()];
@@ -54,17 +54,17 @@ HTTPClientConnectionPtr HTTPClient::GetConn(const InetAddr &addr) {
     // create a new one when no idle connections
     if (!conn) {
         int sockfd = -1;
-        int ret = Connector::Connect(addr, sockfd);
+        int ret = ::cube::net::Connector::Connect(addr, sockfd);
         // retry ??
         if (ret != CUBE_OK) {
             // connect failed
             return conn;
         }
-        TcpConnectionPtr tcp_conn(new TcpConnection(
+        ::cube::net::TcpConnectionPtr tcp_conn(new ::cube::net::TcpConnection(
                     m_event_loop,
                     sockfd,
-                    sockets::GetLocalAddr(sockfd),
-                    sockets::GetPeerAddr(sockfd)));
+                    net::sockets::GetLocalAddr(sockfd),
+                    net::sockets::GetPeerAddr(sockfd)));
 
         conn = std::make_shared<HTTPClientConnection>(m_event_loop, tcp_conn);
     }
@@ -84,7 +84,7 @@ void HTTPClient::PutConn(HTTPClientConnectionPtr conn) {
     }
 }
 
-void HTTPClient::Send(const InetAddr &addr, const HTTPRequest &request, const ResponseCallback &response_callback) {
+void HTTPClient::Send(const ::cube::net::InetAddr &addr, const HTTPRequest &request, const ResponseCallback &response_callback) {
     HTTPClientConnectionPtr conn;
     conn = GetConn(addr);
     if (!conn) {

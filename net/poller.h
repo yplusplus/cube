@@ -7,6 +7,8 @@
 
 namespace cube {
 
+namespace net {
+
 class EventLoop;
 class Eventor;
 
@@ -42,6 +44,8 @@ class Poller {
 
         std::map<int, Eventor *> m_eventors;
 };
+
+}
 
 }
 

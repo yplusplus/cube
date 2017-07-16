@@ -6,8 +6,11 @@
 
 #include "callbacks.h"
 #include "inet_addr.h"
+#include "event_loop.h"
 
 namespace cube {
+
+namespace net {
 
 class EventLoop;
 class Acceptor;
@@ -32,7 +35,7 @@ class TcpServer {
     private:
         EventLoop *m_event_loop;
 
-        InetAddr m_server_addr;
+        const InetAddr &m_server_addr;
 
         std::unique_ptr<Acceptor> m_acceptor;
 
@@ -42,4 +45,5 @@ class TcpServer {
 
 }
 
+}
 #endif

@@ -2,9 +2,9 @@
 
 #include "tcp_connection.h"
 
+#include "base/time_util.h"
 #include "base/logging.h"
-#include "base/string_util.h"
-#include "time_util.h"
+#include "base/strings.h"
 #include "event_loop.h"
 #include "eventor.h"
 #include "socket.h"
@@ -12,6 +12,8 @@
 using namespace std::placeholders;
 
 namespace cube {
+
+namespace net {
 
 uint64_t TcpConnection::m_next_conn_id(1);
 
@@ -322,6 +324,8 @@ void TcpConnection::HandleClose() {
 void TcpConnection::HandleError() {
     m_event_loop->AssertInLoopThread();
     HandleClose();
+}
+
 }
 
 }

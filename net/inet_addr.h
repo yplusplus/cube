@@ -6,6 +6,8 @@
 
 namespace cube {
 
+namespace net {
+
 class InetAddr {
     public:
         InetAddr() {}
@@ -38,5 +40,5 @@ class InetAddr {
 
 }
 
-
+}
 #endif

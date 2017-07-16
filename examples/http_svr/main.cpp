@@ -10,7 +10,7 @@
 
 using namespace std;
 using namespace std::placeholders;
-using namespace cube;
+using namespace cube::net;
 using namespace cube::http;
 
 EventLoop g_event_loop;
@@ -34,6 +34,7 @@ int main() {
 
     InetAddr server_addr(8456);
     HTTPServer http_server(&g_event_loop, server_addr);
+    http_server.SetKeepAlive(true);
     http_server.SetRequestCallback(std::bind(&HelloHandler, _1, _2));
     assert(http_server.Start());
 

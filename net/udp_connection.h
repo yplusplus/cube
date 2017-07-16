@@ -10,6 +10,8 @@
 
 namespace cube {
 
+namespace net {
+
 class EventLoop;
 class Eventor;
 class Socket;
@@ -53,6 +55,8 @@ class UdpConnection : public std::enable_shared_from_this<UdpConnection> {
 
 typedef std::shared_ptr<UdpConnection> UdpConnectionPtr;
 typedef std::weak_ptr<UdpConnection> UdpConnectionWPtr;
+
+}
 
 }
 

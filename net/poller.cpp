@@ -8,6 +8,8 @@
 
 namespace cube {
 
+namespace net {
+
 Poller::Poller(EventLoop *event_loop) 
     : m_event_loop(event_loop),
     m_epoll_fd(::epoll_create(EPOLL_EVENT_SIZE)) {
@@ -63,6 +65,8 @@ void Poller::Poll(int timeout_ms, std::vector<Eventor *> &eventors) {
             eventors[i]->SetRevents(m_epoll_events[i].events);
         }
     }
+}
+
 }
 
 }

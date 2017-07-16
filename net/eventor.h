@@ -9,6 +9,8 @@
 
 namespace cube {
 
+namespace net {
+
 class EventLoop;
 
 class Eventor {
@@ -51,4 +53,5 @@ class Eventor {
 
 }
 
+}
 #endif

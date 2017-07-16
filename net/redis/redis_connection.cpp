@@ -3,7 +3,7 @@
 #include "hiredis.h"
 #include "async.h"
 
-#include "base/log.h"
+#include "base/logging.h"
 
 #include "net/event_loop.h"
 #include "net/eventor.h"
@@ -19,14 +19,14 @@ namespace redis {
 
 uint64_t RedisConnection::m_next_conn_id(1);
 
-RedisConnection::RedisConnection(EventLoop *event_loop,
+RedisConnection::RedisConnection(::cube::net::EventLoop *event_loop,
     redisAsyncContext *redis_context,
-    const InetAddr &local_addr,
-    const InetAddr &peer_addr)
+    const ::cube::net::InetAddr &local_addr,
+    const ::cube::net::InetAddr &peer_addr)
     : m_event_loop(event_loop),
     m_conn_id(__sync_fetch_and_add(&m_next_conn_id, 1)),
     m_redis_context(redis_context),
-    m_eventor(new Eventor(m_event_loop, m_redis_context->c.fd)),
+    m_eventor(new ::cube::net::Eventor(m_event_loop, m_redis_context->c.fd)),
     m_local_addr(local_addr),
     m_peer_addr(peer_addr),
     m_closed(false),
@@ -38,7 +38,7 @@ RedisConnection::RedisConnection(EventLoop *event_loop,
 RedisConnection::~RedisConnection() {
     // easy to find memory leaks
     assert(m_redis_context == NULL);
-    LOG_DEBUG("");
+    M_LOG_DEBUG("");
 }
 
 void RedisConnection::Initialize() {
@@ -121,7 +121,7 @@ void RedisConnection::OnRedisReply(struct redisAsyncContext *redis_context, void
 
 void RedisConnection::OnRedisReplyTimeout(RedisConnectionPtr conn) {
     
-    LOG_DEBUG("");
+    M_LOG_DEBUG("");
     // time out
     
     conn->m_timer_id = 0;
@@ -131,7 +131,7 @@ void RedisConnection::OnRedisReplyTimeout(RedisConnectionPtr conn) {
 }
 
 void RedisConnection::OnConnect(const redisAsyncContext *redis_context, int status) {
-    LOG_DEBUG("status=%d", status);
+    M_LOG_DEBUG("status=%d", status);
 
     RedisConnection *conn = static_cast<RedisConnection *>(redis_context->ev.data);
 
@@ -151,7 +151,7 @@ void RedisConnection::OnConnect(const redisAsyncContext *redis_context, int stat
 }
 
 void RedisConnection::OnDisconnect(const redisAsyncContext *redis_context, int status) {
-    LOG_DEBUG("status=%d", status);
+    M_LOG_DEBUG("status=%d", status);
 
     // redisAsyncContext is freeing,
     
@@ -169,32 +169,32 @@ void RedisConnection::HandleEvents(int revents) {
     // prevent connection being destroyed in HandleXXXX()
     RedisConnectionPtr guard(shared_from_this());
 
-    if (revents & Poller::POLLERR) {
+    if (revents & ::cube::net::Poller::POLLERR) {
         HandleError();
     }
 
-    if ((revents & Poller::POLLHUB) && (revents & ~Poller::POLLIN)) {
+    if ((revents & ::cube::net::Poller::POLLHUB) && (revents & ~::cube::net::Poller::POLLIN)) {
         HandleClose();
     }
 
-    if (revents & Poller::POLLIN) {
+    if (revents & ::cube::net::Poller::POLLIN) {
         HandleRead();
     }
 
-    if (revents & Poller::POLLOUT) {
+    if (revents & ::cube::net::Poller::POLLOUT) {
         HandleWrite();
     }
 }
 
 void RedisConnection::HandleRead() {
-    LOG_DEBUG("");
+    M_LOG_DEBUG("");
     assert(m_event_loop->IsLoopThread());
     if (m_redis_context)
         redisAsyncHandleRead(m_redis_context);
 }
 
 void RedisConnection::HandleWrite() {
-    LOG_DEBUG("");
+    M_LOG_DEBUG("");
     assert(m_event_loop->IsLoopThread());
     if (m_redis_context)
         redisAsyncHandleWrite(m_redis_context);

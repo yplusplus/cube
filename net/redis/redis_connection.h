@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <memory>
 
+#include "net/event_loop.h"
 #include "net/inet_addr.h"
 #include "net/callbacks.h"
 
@@ -11,9 +12,6 @@ struct redisAsyncContext;
 struct redisReply;
 
 namespace cube {
-
-class EventLoop;
-class Eventor;
 
 typedef uint64_t TimerId; 
 
@@ -29,8 +27,10 @@ public:
     typedef std::function<void(RedisConnectionPtr, int)> ConnectCallback;
     typedef std::function<void(RedisConnectionPtr)> DisconnectCallback;
 
-    RedisConnection(EventLoop *event_loop, redisAsyncContext *redis_context,
-            const InetAddr &local_addr, const InetAddr &peer_addr);
+    RedisConnection(::cube::net::EventLoop *event_loop,
+            redisAsyncContext *redis_context,
+            const ::cube::net::InetAddr &local_addr,
+            const ::cube::net::InetAddr &peer_addr);
     ~RedisConnection();
 
     void Initialize();
@@ -49,8 +49,8 @@ public:
     int IssueCommand(const RedisReplyCallback &redis_reply_callback, int64_t timeout_ms,
             int argc, const char **argv, const size_t *argvlen);
 
-    const InetAddr &LocalAddr() const { return m_local_addr; }
-    const InetAddr &PeerAddr() const { return m_peer_addr; }
+    const ::cube::net::InetAddr &LocalAddr() const { return m_local_addr; }
+    const ::cube::net::InetAddr &PeerAddr() const { return m_peer_addr; }
 
     uint64_t Id() const { return m_conn_id; }
     void Close();
@@ -71,16 +71,16 @@ private:
 private:
     static uint64_t m_next_conn_id; // atomic
 
-    EventLoop *m_event_loop;
+    ::cube::net::EventLoop *m_event_loop;
 
     const uint64_t m_conn_id;
 
     redisAsyncContext *m_redis_context;
 
-    std::unique_ptr<Eventor> m_eventor;
+    std::unique_ptr<::cube::net::Eventor> m_eventor;
 
-    InetAddr m_local_addr;
-    InetAddr m_peer_addr;
+    ::cube::net::InetAddr m_local_addr;
+    ::cube::net::InetAddr m_peer_addr;
 
     bool m_closed;
 

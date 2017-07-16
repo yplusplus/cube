@@ -3,27 +3,29 @@
 
 namespace cube {
 
+namespace net {
+
 class InetAddr;
 
 namespace sockets {
-    int CreateStreamSocket();
-    int CreateDgramSocket();
-    bool Bind(int sockfd, const InetAddr &bind_addr);
-    int CreateNonBlockStreamSocket();
-    bool SetNonBlocking(int sockfd, bool on);
-    bool SetNoDelay(int sockfd, bool on);
-    bool SetQuickAck(int sockfd, bool on);
-    bool SetReuseAddr(int sockfd, bool on);
-    bool SetKeepAlive(int sockfd, bool on);
-    bool SetRecvBuffSize(int sockfd, int size);
-    bool SetSendBuffSize(int sockfd, int size);
-    int GetSocketError(int sockfd, int &saved_errno);
 
-    InetAddr GetLocalAddr(int sockfd);
-    InetAddr GetPeerAddr(int sockfd);
+int CreateStreamSocket();
+int CreateDgramSocket();
+bool Bind(int sockfd, const InetAddr &bind_addr);
+int CreateNonBlockStreamSocket();
+bool SetNonBlocking(int sockfd, bool on);
+bool SetNoDelay(int sockfd, bool on);
+bool SetQuickAck(int sockfd, bool on);
+bool SetReuseAddr(int sockfd, bool on);
+bool SetKeepAlive(int sockfd, bool on);
+bool SetRecvBuffSize(int sockfd, int size);
+bool SetSendBuffSize(int sockfd, int size);
+int GetSocketError(int sockfd, int &saved_errno);
+
+InetAddr GetLocalAddr(int sockfd);
+InetAddr GetPeerAddr(int sockfd);
+
 }
-
-class InetAddr;
 
 class Socket {
     public:
@@ -47,6 +49,8 @@ class Socket {
     private:
         const int m_sockfd;
 };
+
+}
 
 }
 

@@ -9,9 +9,11 @@
 #include "event_loop.h"
 #include "eventor.h"
 #include "socket.h"
-#include "base/string_util.h"
+#include "base/strings.h"
 
 namespace cube {
+
+namespace net {
 
 UdpConnection::UdpConnection(EventLoop *event_loop,
         int sockfd,
@@ -93,6 +95,8 @@ void UdpConnection::HandleRead() {
         m_read_callback(shared_from_this(), m_input_buffer, m_input_buffer_length, peer_addr);
         break;
     }
+}
+
 }
 
 }

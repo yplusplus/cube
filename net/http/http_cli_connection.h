@@ -8,8 +8,6 @@
 
 namespace cube {
 
-class EventLoop;
-
 namespace http {
 
 class HTTPRequest;
@@ -19,7 +17,7 @@ class HTTPClientConnection : public std::enable_shared_from_this<HTTPClientConne
         typedef std::function<void(std::shared_ptr<HTTPClientConnection>, const HTTPResponse *)> ResponseCallback;
         typedef std::function<void(std::shared_ptr<HTTPClientConnection>)> DisconnectionCallback;
 
-        HTTPClientConnection(EventLoop *event_loop, TcpConnectionPtr conn);
+        HTTPClientConnection(::cube::net::EventLoop *event_loop, ::cube::net::TcpConnectionPtr conn);
         ~HTTPClientConnection();
 
         void SetDisconnectCallback(const DisconnectionCallback &cb) { m_disconnect_callback = cb; }
@@ -30,21 +28,21 @@ class HTTPClientConnection : public std::enable_shared_from_this<HTTPClientConne
         void Close() { m_conn->Close(); }
         bool Closed() const { return m_conn->Closed(); }
 
-        const InetAddr LocalAddr() const { return m_conn->LocalAddr(); }
-        const InetAddr PeerAddr() const { return m_conn->PeerAddr(); }
+        const ::cube::net::InetAddr LocalAddr() const { return m_conn->LocalAddr(); }
+        const ::cube::net::InetAddr PeerAddr() const { return m_conn->PeerAddr(); }
 
     private:
-        void OnConnect(TcpConnectionPtr conn, int status);
-        void OnDisconnect(TcpConnectionPtr conn);
-        void OnHeaders(TcpConnectionPtr conn, Buffer *buffer);
+        void OnConnect(::cube::net::TcpConnectionPtr conn, int status);
+        void OnDisconnect(::cube::net::TcpConnectionPtr conn);
+        void OnHeaders(::cube::net::TcpConnectionPtr conn, Buffer *buffer);
         bool ParseHeaders(Buffer *buffer);
-        void OnBody(TcpConnectionPtr conn, Buffer *buffer);
+        void OnBody(::cube::net::TcpConnectionPtr conn, Buffer *buffer);
         void HandleResponse();
 
     private:
-        EventLoop *m_event_loop;
+        ::cube::net::EventLoop *m_event_loop;
 
-        TcpConnectionPtr m_conn;
+        ::cube::net::TcpConnectionPtr m_conn;
 
         bool m_requesting;
 

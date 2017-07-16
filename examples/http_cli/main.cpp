@@ -11,7 +11,7 @@
 
 using namespace std;
 using namespace std::placeholders;
-using namespace cube;
+using namespace cube::net;
 using namespace cube::http;
 
 EventLoop g_event_loop;
@@ -46,6 +46,7 @@ int main() {
     g_request.SetProto("HTTP/1.1");
     g_request.SetMethod("GET");
     g_request.SetURL("/");
+    g_request.SetKeepAlive(true);
     g_client.Send(g_server_addr, g_request, std::bind(OnResponse, _1));
     g_event_loop.Loop();
 

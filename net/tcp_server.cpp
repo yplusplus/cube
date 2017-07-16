@@ -1,6 +1,5 @@
 #include "base/logging.h"
 #include "tcp_server.h"
-#include "event_loop.h"
 #include "acceptor.h"
 #include "tcp_connection.h"
 #include "socket.h"
@@ -8,6 +7,8 @@
 using namespace std::placeholders;
 
 namespace cube {
+
+namespace net {
 
 TcpServer::TcpServer(EventLoop *event_loop, const InetAddr &server_addr) 
     : m_event_loop(event_loop),
@@ -54,6 +55,8 @@ void TcpServer::OnAccept(int sockfd) {
 
     M_LOG_INFO("New Connection[%lu] in TcpServer localAddr[%s], peerAddr[%s]",
             conn->Id(), local_addr.IpPort().c_str(), peer_addr.IpPort().c_str());
+}
+
 }
 
 }

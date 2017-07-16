@@ -11,6 +11,8 @@
 
 namespace cube {
 
+namespace net {
+
 Socket::Socket(int sockfd) 
     : m_sockfd(sockfd) {
 }
@@ -46,12 +48,14 @@ int CreateDgramSocket() {
     int sockfd = ::socket(AF_INET, SOCK_DGRAM, 0);
     return sockfd;
 }
+
 bool Bind(int sockfd, const InetAddr &bind_addr) {
     socklen_t sockaddr_len = sizeof(bind_addr.SockAddrIn());
     if (::bind(sockfd, bind_addr.SockAddr(), sockaddr_len) < 0)
         return false;
     return true;
 }
+
 int CreateNonBlockStreamSocket() {
     int sockfd = CreateStreamSocket();
     if (sockfd < 0) {
@@ -145,6 +149,8 @@ InetAddr GetPeerAddr(int sockfd) {
     socklen_t addr_len = sizeof(addr);
     ::getpeername(sockfd, (struct sockaddr *)&addr, &addr_len);
     return InetAddr(addr);
+}
+
 }
 
 }

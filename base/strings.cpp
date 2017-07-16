@@ -1,11 +1,21 @@
-#include "string_util.h"
-
 #include <stdarg.h>
 #include <stdlib.h>
+#include <cassert>
+#include <cstring>
+
+#include "strings.h"
 
 namespace cube {
 
 namespace strings {
+
+char *safe_strncpy(char *dest, const char *src, size_t n) {
+    assert(n > 0);
+    dest = strncpy(dest, src, n);
+    // make sure dest is null-terminated
+    dest[n - 1] = '\0';
+    return dest;
+}
 
 void InternalAppend(std::string& dst, const char* fmt, va_list ap)
 {

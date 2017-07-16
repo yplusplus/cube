@@ -4,7 +4,7 @@
 #include "async.h"
 #include "hiredis.h"
 
-#include "base/log.h"
+#include "base/logging.h"
 #include "net/event_loop.h"
 #include "net/inet_addr.h"
 #include "net/socket.h"
@@ -17,16 +17,15 @@ namespace cube {
 
 namespace redis {
 
-RedisClient::RedisClient(EventLoop *event_loop)
+RedisClient::RedisClient(::cube::net::EventLoop *event_loop)
     : m_event_loop(event_loop) {
 }
 
 RedisClient::~RedisClient() {
-    LOG_DEBUG("");
     HandleClose();
 }
 
-RedisConnectionPtr RedisClient::Connect(const InetAddr &server_addr) {
+RedisConnectionPtr RedisClient::Connect(const ::cube::net::InetAddr &server_addr) {
     RedisConnectionPtr conn;
     redisAsyncContext *redis_context = redisAsyncConnect(
             server_addr.Ip().c_str(), server_addr.HostOrderPort());
@@ -41,19 +40,20 @@ RedisConnectionPtr RedisClient::Connect(const InetAddr &server_addr) {
         return conn;
     }
 
-    LOG_DEBUG("redis client connect successfully");
+    M_LOG_DEBUG("redis client connect successfully");
 
     int sockfd = redis_context->c.fd;
     conn = std::make_shared<RedisConnection>(
             m_event_loop, redis_context,
-            sockets::GetLocalAddr(sockfd), sockets::GetPeerAddr(sockfd));
+            net::sockets::GetLocalAddr(sockfd),
+            net::sockets::GetPeerAddr(sockfd));
 
     conn->SetDisconnectCallback(std::bind(&RedisClient::OnDisconnect, this, _1));
     conn->Initialize();
     return conn;
 }
 
-RedisConnectionPtr RedisClient::GetConn(const InetAddr &addr) {
+RedisConnectionPtr RedisClient::GetConn(const ::cube::net::InetAddr &addr) {
     RedisConnectionPtr conn;
     auto &idle_list = m_idle_conns[addr.IpPort()];
     while (!idle_list.empty()) {
@@ -64,7 +64,7 @@ RedisConnectionPtr RedisClient::GetConn(const InetAddr &addr) {
             conn.reset();
         } else {
             // found a idle connection
-            LOG_INFO("found a idle connection PeerAddr[%s] conn[%lu]", conn->PeerAddr().IpPort().c_str(), conn->Id());
+            M_LOG_INFO("found a idle connection PeerAddr[%s] conn[%lu]", conn->PeerAddr().IpPort().c_str(), conn->Id());
             break;
         }
     }
@@ -88,7 +88,7 @@ void RedisClient::PutConn(RedisConnectionPtr conn) {
     }
 }
 
-void RedisClient::IssueCommand(const InetAddr &server_addr,
+void RedisClient::IssueCommand(const ::cube::net::InetAddr &server_addr,
         const RedisReplyCallback &callback,
         int64_t timeout_ms, const char *format, ...) {
 
@@ -98,7 +98,7 @@ void RedisClient::IssueCommand(const InetAddr &server_addr,
     va_end(ap);
 }
 
-void RedisClient::IssueCommand(const InetAddr &server_addr,
+void RedisClient::IssueCommand(const ::cube::net::InetAddr &server_addr,
         const RedisReplyCallback &callback,
         int64_t timeout_ms, const char *format, va_list ap) {
 
@@ -124,11 +124,13 @@ void RedisClient::IssueCommand(const InetAddr &server_addr,
     }
     m_requesting_conns[conn->Id()] = conn;
 
-    LOG_DEBUG("IssueCommand successfully");
+    M_LOG_DEBUG("IssueCommand successfully");
 }
 
-void RedisClient::IssueCommand(const InetAddr &server_addr, const RedisReplyCallback &callback,
-        int64_t timeout_ms, int argc, const char **argv, const size_t *argvlen)
+void RedisClient::IssueCommand(const ::cube::net::InetAddr &server_addr,
+        const RedisReplyCallback &callback,
+        int64_t timeout_ms, int argc,
+        const char **argv, const size_t *argvlen)
 {
     RedisConnectionPtr conn = GetConn(server_addr);
     if (!conn) {
@@ -152,7 +154,7 @@ void RedisClient::IssueCommand(const InetAddr &server_addr, const RedisReplyCall
     }
     m_requesting_conns[conn->Id()] = conn;
 
-    LOG_DEBUG("IssueCommand successfully");
+    M_LOG_DEBUG("IssueCommand successfully");
 }
 
 void RedisClient::OnDisconnect(RedisConnectionPtr conn) {
