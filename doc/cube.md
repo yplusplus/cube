@@ -190,10 +190,10 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
         // run callback when the read data's length >= 1
         void ReadAny(const ReadCallback &cb);
 
-        // 向发送缓存区写入数据
+        // 向发送缓冲区写入数据
         bool Write(const std::string &str);
         bool Write(const char *data, size_t len);
-        // 下昂
+        // 向发送缓冲区写入数据，将数据全部write入socket句柄后，调用回调函数
         bool Write(const std::string &str, const WriteCompleteCallback &cb);
         bool Write(const char *data, size_t len, const WriteCompleteCallback &cb);
 
