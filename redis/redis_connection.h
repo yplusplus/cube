@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <memory>
+#include <list>
 
 #include "net/event_loop.h"
 #include "net/inet_addr.h"
@@ -22,6 +23,7 @@ class RedisConnection;
 typedef std::shared_ptr<RedisConnection> RedisConnectionPtr;
 typedef std::function<void(redisReply *)> RedisReplyCallback;
 
+// Redis connection wraps redisAsyncContext
 class RedisConnection : public std::enable_shared_from_this<RedisConnection> {
 public:
     typedef std::function<void(RedisConnectionPtr, int)> ConnectCallback;
@@ -35,6 +37,7 @@ public:
 
     void Initialize();
 
+    // use for RedisAdapter
     void EnableReading();
     void DisableReading();
     void EnableWriting();
@@ -44,10 +47,9 @@ public:
     void SetConnectCallback(const ConnectCallback &cb) { m_connect_callback = cb; }
     void SetDisconnectCallback(const DisconnectCallback &cb) { m_disconnect_callback = cb; }
 
-    int IssueCommand(const RedisReplyCallback &redis_reply_callback, int64_t timeout_ms,
-            const char *format, va_list ap);
-    int IssueCommand(const RedisReplyCallback &redis_reply_callback, int64_t timeout_ms,
-            int argc, const char **argv, const size_t *argvlen);
+    int Execv(const RedisReplyCallback &callback, const char *format, va_list ap);
+    int Exec(const RedisReplyCallback &callback, const char *format, ...);
+    int Exec(const RedisReplyCallback &callback, int argc, const char **argv, const size_t *argvlen);
 
     const ::cube::net::InetAddr &LocalAddr() const { return m_local_addr; }
     const ::cube::net::InetAddr &PeerAddr() const { return m_peer_addr; }
@@ -56,11 +58,14 @@ public:
     void Close();
     bool Closed() const { return m_closed; }
 
+public:
+    // create a new connection connected to specific addr
+    static RedisConnectionPtr Connect(::cube::net::EventLoop *event_loop, const ::cube::net::InetAddr &addr);
+
 private:
-    static void OnRedisReply(struct redisAsyncContext *redis_context, void *reply, void *privdata);
-    static void OnRedisReplyTimeout(RedisConnectionPtr conn);
     static void OnConnect(const redisAsyncContext *redis_context, int status);
     static void OnDisconnect(const redisAsyncContext *redis_context, int status);
+    static void OnRedisReply(struct redisAsyncContext *redis_context, void *reply, void *privdata);
 
     void HandleEvents(int revents);
     void HandleRead();
@@ -84,11 +89,11 @@ private:
 
     bool m_closed;
 
-    TimerId m_timer_id;
-
     ConnectCallback m_connect_callback;
     DisconnectCallback m_disconnect_callback;
-    RedisReplyCallback m_redis_reply_callback;
+
+    // reply callbacks for redis request
+    std::list<RedisReplyCallback> m_callback_list;
 };
 
 }

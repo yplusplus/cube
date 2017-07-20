@@ -13,3 +13,8 @@ aux_source_directory(./net NET_SOURCES)
 aux_source_directory(./net/http NET_HTTP_SOURCES)
 
 add_library(cube ${BASE_SOURCES} ${NET_SOURCES} ${NET_HTTP_SOURCES})
+
+if (DEFINED ENV{HIREDIS_ROOT})
+    message("found hiredis_root=" $ENV{HIREDIS_ROOT})
+    add_subdirectory(redis)
+endif()
