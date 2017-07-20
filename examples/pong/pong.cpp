@@ -56,6 +56,7 @@ int main() {
     TcpServer server(&g_event_loop, addr);
     // 设置回调函数，当新连接建立后，执行该函数
     server.SetNewConnectionCallback(std::bind(OnNewConnection, _1));
+    server.Start();
     // 进入事件循环，死循环
     g_event_loop.Loop();
     return 0;
