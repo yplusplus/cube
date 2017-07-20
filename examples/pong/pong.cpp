@@ -52,6 +52,7 @@ int main() {
     InetAddr addr(8456);
     TcpServer server(&g_event_loop, addr);
     server.SetNewConnectionCallback(std::bind(OnNewConnection, _1));
+    server.Start();
     g_event_loop.Loop();
     return 0;
 }
