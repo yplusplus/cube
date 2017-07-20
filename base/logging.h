@@ -9,12 +9,12 @@
             ::cube::logging::GetLogger()->level("%s|%d|%s|" format "\n", __FILE__, __LINE__, __FUNCTION__ , ##args); \
     } while(false)
 
-#define M_LOG_LOG(format, args...) M_LOG(Log, format, ##args)
-#define M_LOG_DEBUG(format, args...) M_LOG(Debug, format, ##args)
-#define M_LOG_TRACE(format, args...) M_LOG(Trace, format, ##args)
-#define M_LOG_WARN(format, args...)  M_LOG(Warn, format, ##args)
-#define M_LOG_ERROR(format, args...) M_LOG(Error, format, ##args)
-#define M_LOG_INFO(format, args...)  M_LOG(Info, format, ##args)
+#define M_LOG_LOG(format, args...) M_LOG(Log, "LOG|" format, ##args)
+#define M_LOG_DEBUG(format, args...) M_LOG(Debug, "DEBUG|" format, ##args)
+#define M_LOG_TRACE(format, args...) M_LOG(Trace, "TRACE|" format, ##args)
+#define M_LOG_WARN(format, args...)  M_LOG(Warn, "WARN|" format, ##args)
+#define M_LOG_ERROR(format, args...) M_LOG(Error, "ERROR|" format, ##args)
+#define M_LOG_INFO(format, args...)  M_LOG(Info, "INFO|" format, ##args)
 
 namespace cube {
 
@@ -68,7 +68,7 @@ class EmptyLogger : public Logger {
 typedef std::shared_ptr<Logger> LoggerPtr;
 
 LogLevel LoggerLevel();
-void SetLoggerLevel();
+void SetLoggerLevel(LogLevel logger_level);
 LoggerPtr GetLogger();
 void SetLogger(LoggerPtr logger);
 
