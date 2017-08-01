@@ -19,9 +19,10 @@ HTTPClient::HTTPClient(::cube::net::EventLoop *event_loop)
 
 HTTPClient::~HTTPClient() {
     // close all connections
-    for (auto it = m_idle_conns.begin(); it != m_idle_conns.end(); it++) {
+    auto idle_conns = std::move(m_idle_conns);
+    for (auto it = idle_conns.begin(); it != idle_conns.end(); it++) {
         for (auto conn_it = it->second.begin(); conn_it != it->second.end(); conn_it++) {
-            (*conn_it)->Close();
+            conn_it->second->Close();
         }
     }
     m_idle_conns.clear();
@@ -36,37 +37,29 @@ HTTPClientConnectionPtr HTTPClient::GetConn(const ::cube::net::InetAddr &addr) {
     HTTPClientConnectionPtr conn;
 
     auto &idle_list = m_idle_conns[addr.IpPort()];
-    while (!idle_list.empty()) {
-        conn.swap(idle_list.back());
-        idle_list.pop_back();
-        if (conn->Closed()) {
-            // connection has been closed
-            conn.reset();
-        } else {
-            // find a idle connection
-            M_LOG_INFO("found a idle connection PeerAddr[%s], Id[%lu]",
-                    conn->PeerAddr().IpPort().c_str(), conn->Id());
-            break;
-        }
+    if (!idle_list.empty()) {
+        conn.swap(idle_list.begin()->second);
+        idle_list.erase(idle_list.begin());
     }
     if (idle_list.empty()) m_idle_conns.erase(addr.IpPort());
 
-    // create a new one when no idle connections
-    if (!conn) {
-        int sockfd = -1;
-        int ret = ::cube::net::Connector::Connect(addr, sockfd);
-        // retry ??
-        if (ret != CUBE_OK) {
-            // connect failed
-            return conn;
-        }
-        ::cube::net::TcpConnectionPtr tcp_conn(new ::cube::net::TcpConnection(
-                    m_event_loop,
-                    sockfd,
-                    net::sockets::GetLocalAddr(sockfd),
-                    net::sockets::GetPeerAddr(sockfd)));
+    // fast path: get a idle connection
+    if (conn) {
+        M_LOG_INFO("get a idle connection[%lu] LocalAddr[%s] PeerAddr[%s]",
+                conn->Id(),
+                conn->LocalAddr().IpPort().c_str(),
+                conn->PeerAddr().IpPort().c_str());
+        return conn;
+    }
 
-        conn = std::make_shared<HTTPClientConnection>(m_event_loop, tcp_conn);
+    // slow path: create a new connection
+    if (!conn) {
+        auto tcp_conn = ::cube::net::Connector::Connect(m_event_loop, addr);
+        if (tcp_conn) {
+            conn = std::make_shared<HTTPClientConnection>(m_event_loop, tcp_conn);
+        } else {
+            // TODO retry ??
+        }
     }
     return conn;
 }
@@ -78,45 +71,83 @@ void HTTPClient::PutConn(HTTPClientConnectionPtr conn) {
     auto &idle_list = m_idle_conns[conn->PeerAddr().IpPort()];
     // at most 16 idle conns per [Ip:Port]
     if (idle_list.size() < 16) {
-        idle_list.push_back(std::move(conn));
+        idle_list[conn->Id()] = conn;
     } else {
         conn->Close();
     }
 }
 
-void HTTPClient::Send(const ::cube::net::InetAddr &addr, const HTTPRequest &request, const ResponseCallback &response_callback) {
-    HTTPClientConnectionPtr conn;
-    conn = GetConn(addr);
+int HTTPClient::Send(const ::cube::net::InetAddr &addr, const HTTPRequest &request, const ResponseCallback &response_callback, int64_t timeout_ms /* = 2000 */) {
+    HTTPClientConnectionPtr conn = GetConn(addr);
     if (!conn) {
         // no idle conns and connect failed??
         // run callback in next loop
-        m_event_loop->Post(std::bind(response_callback, (const HTTPResponse *)NULL));
-        return;
+        M_LOG_WARN("get conn failed");
+        return CUBE_ERR;
     }
 
     if (!conn->SendRequest(request,
                 std::bind(&HTTPClient::OnResponse, this, response_callback, _1, _2))) {
         // send failed
         // run callback in next loop
-        m_event_loop->Post(std::bind(response_callback, (const HTTPResponse *)NULL));
-        return;
+        M_LOG_WARN("send request failed");
+        return CUBE_ERR;
     }
     m_requesting_conns[conn->Id()] = conn;
+
+    // add timeout timer
+    uint64_t timer_id = m_event_loop->RunAfter(
+            std::bind(&HTTPClient::OnResponseTimeout,
+                this, conn), timeout_ms);
+    m_timeouts[conn->Id()] = timer_id;
+
+    return CUBE_OK;
 }
 
 void HTTPClient::OnDisconnect(HTTPClientConnectionPtr conn) {
-    // connection has been closed, lazy-release in GetConn()
+    auto it = m_idle_conns.find(conn->PeerAddr().IpPort());
+    if (it == m_idle_conns.end())
+        return;
+
+    M_LOG_TRACE("remove conn[%lu] from idle list", conn->Id());
+
+    it->second.erase(conn->Id());
+
+    // remove empty map
+    if (it->second.empty())
+        m_idle_conns.erase(it);
 }
 
 void HTTPClient::OnResponse(const ResponseCallback &response_callback, HTTPClientConnectionPtr conn, const HTTPResponse *response) {
     // remove from requesting connections
     m_requesting_conns.erase(conn->Id());
 
+    // remove timer if not time out
+    auto it = m_timeouts.find(conn->Id());
+    if (it != m_timeouts.end()) {
+        m_event_loop->CancelTimer(it->second);
+        m_timeouts.erase(it);
+    }
+
     // put back to idle list
     if (!conn->Closed())
         PutConn(conn);
 
     response_callback(response);
+}
+
+void HTTPClient::OnResponseTimeout(HTTPClientConnectionPtr conn) {
+    M_LOG_WARN("OnResponseTimeout conn[%lu] local_addr[%s], peer_addr[%s]",
+            conn->Id(),
+            conn->LocalAddr().IpPort().c_str(),
+            conn->PeerAddr().IpPort().c_str());
+
+    // we know timeout-timer has been activated
+    // so remove from timeouts
+    m_timeouts.erase(conn->Id());
+
+    // call back by calling Close()
+    conn->Close();
 }
 
 }

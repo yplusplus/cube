@@ -10,7 +10,8 @@ namespace cube {
 
 namespace http {
 
-HTTPClientConnection::HTTPClientConnection(::cube::net::EventLoop *event_loop,
+HTTPClientConnection::HTTPClientConnection(
+        ::cube::net::EventLoop *event_loop,
         ::cube::net::TcpConnectionPtr conn)
     : m_event_loop(event_loop),
     m_conn(conn),
@@ -27,7 +28,9 @@ HTTPClientConnection::~HTTPClientConnection() {
 bool HTTPClientConnection::SendRequest(const HTTPRequest &request, const ResponseCallback &response_callback) {
     assert(!m_response_callback);
 
+    // TODO: more effective
     if (!m_conn->Write(request.ToString())) {
+        M_LOG_WARN("http client connection send request failed");
         return false;
     }
 
@@ -40,21 +43,24 @@ bool HTTPClientConnection::SendRequest(const HTTPRequest &request, const Respons
 void HTTPClientConnection::OnConnect(::cube::net::TcpConnectionPtr conn, int status) {
     // connect failed
     if (status != CUBE_OK) {
+        M_LOG_WARN("conn[%lu] connect failed", conn->Id());
     }
 }
 
 void HTTPClientConnection::OnDisconnect(::cube::net::TcpConnectionPtr conn) {
     // run response callback with NULL response
+    auto http_cli_conn = shared_from_this();
     if (m_response_callback) {
-        //m_event_loop->Post(std::bind(response_callback, shared_from_this(), (const HTTPResponse *)NULL));
+        assert(m_requesting);
+
         ResponseCallback response_callback = std::move(m_response_callback);
         m_response_callback = NULL;
         m_requesting = false;
-        response_callback(shared_from_this(), (const HTTPResponse *)NULL);
+        response_callback(http_cli_conn, (const HTTPResponse *)NULL);
     }
 
     if (m_disconnect_callback)
-        m_disconnect_callback(shared_from_this());
+        m_disconnect_callback(http_cli_conn);
 }
 
 void HTTPClientConnection::OnHeaders(::cube::net::TcpConnectionPtr conn, Buffer *buffer) {
@@ -87,12 +93,13 @@ bool HTTPClientConnection::ParseHeaders(Buffer *buffer) {
     // Proto StatusCode StatusMessage
     std::vector<std::string> fields;
     ::cube::strings::Split(lines[0], " ", fields, 2);
-    if (fields.size() != 3) {
+    if (fields.size() < 2 || fields.size() > 3) {
         return false;
     }
     m_response.SetProto(fields[0]);
     m_response.SetStatusCode(std::stoi(fields[1]));
-    m_response.SetStatusMessage(fields[2]);
+    if (fields.size() > 2)
+        m_response.SetStatusMessage(fields[2]);
 
     // headers
     for (size_t i = 1; i < lines.size(); i++) {

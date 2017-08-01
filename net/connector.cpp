@@ -4,6 +4,7 @@
 #include "inet_addr.h"
 #include "socket.h"
 #include "connector.h"
+#include "tcp_connection.h"
 
 namespace cube {
 
@@ -26,6 +27,19 @@ int Connector::Connect(const InetAddr &server_addr, int &sockfd) {
     }
 
     return CUBE_OK;
+}
+
+std::shared_ptr<TcpConnection> Connector::Connect(EventLoop *event_loop, const InetAddr &server_addr) {
+    int sockfd;
+    int ret = Connect(server_addr, sockfd);
+    if (ret != CUBE_OK) {
+        return NULL;
+    }
+
+    return std::make_shared<TcpConnection>(
+            event_loop, sockfd,
+            sockets::GetLocalAddr(sockfd),
+            sockets::GetPeerAddr(sockfd));
 }
 
 }
