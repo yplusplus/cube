@@ -80,8 +80,8 @@ TimerId EventLoop::RunPeriodic(const Task &task, int64_t interval_ms) {
     return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMillis() + interval_ms, interval_ms);
 }
 
-TimerId EventLoop::RunPeriodic(const Task &task, int64_t expiration_ms, int64_t interval_ms) {
-    return m_timer_queue->AddTimer(task, expiration_ms, interval_ms);
+TimerId EventLoop::RunPeriodic(const Task &task, int64_t delay_ms, int64_t interval_ms) {
+    return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMillis() + delay_ms, interval_ms);
 }
 
 void EventLoop::CancelTimer(TimerId timer_id) {

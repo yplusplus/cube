@@ -45,7 +45,7 @@ class EventLoop {
         TimerId RunAt(const Task &task, int64_t expiration_ms);
         TimerId RunAfter(const Task &task, int64_t delay_ms);
         TimerId RunPeriodic(const Task &task, int64_t interval_ms);
-        TimerId RunPeriodic(const Task &task, int64_t expiration_ms, int64_t interval_ms);
+        TimerId RunPeriodic(const Task &task, int64_t delay_ms, int64_t interval_ms);
         void CancelTimer(TimerId time_id);
 
         bool IsLoopThread() const { return m_thread_id == std::this_thread::get_id(); }
