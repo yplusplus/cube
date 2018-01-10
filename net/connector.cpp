@@ -36,10 +36,13 @@ std::shared_ptr<TcpConnection> Connector::Connect(EventLoop *event_loop, const I
         return NULL;
     }
 
-    return std::make_shared<TcpConnection>(
+    auto conn = std::make_shared<TcpConnection>(
             event_loop, sockfd,
             sockets::GetLocalAddr(sockfd),
             sockets::GetPeerAddr(sockfd));
+
+    conn->m_state = TcpConnection::ConnState_Connecting;
+    return conn;
 }
 
 }
