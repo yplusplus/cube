@@ -34,9 +34,13 @@ bool Poller::UpdateEvents(Eventor *eventor) {
 
 bool Poller::RemoveEvents(Eventor *eventor) {
     m_event_loop->AssertInLoopThread();
-    //assert(m_eventors.count(eventor->Fd()) > 0);
-    m_eventors.erase(eventor->Fd());
-    return EpollOperate(EPOLL_CTL_DEL, eventor);
+    
+    auto it = m_eventors.find(eventor->Fd());
+    if (it != m_eventors.end()) {
+        m_eventors.erase(it);
+        return EpollOperate(EPOLL_CTL_DEL, eventor);
+    }
+    return true;
 }
 
 bool Poller::EpollOperate(int operation, Eventor *eventor) {

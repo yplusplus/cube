@@ -188,22 +188,16 @@ void TcpConnection::HandleRead() {
 
     bool has_error = false;
     if (m_eventor->Reading()) {
-        if (m_state == ConnState_Connecting) {
-            if (HandleConnect() != CUBE_OK) {
-                return;
-            }
+        ssize_t nread = m_input_buffer.ReadFromFd(m_sock->Fd());
+        if (nread < 0) {
+            // error
+            has_error = true;
+        } else if (nread == 0) {
+            // close by peer
+            M_LOG_DEBUG("conn[%lu] closed by peer", Id());
+            HandleClose();
         } else {
-            ssize_t nread = m_input_buffer.ReadFromFd(m_sock->Fd());
-            if (nread < 0) {
-                // error
-                has_error = true;
-            } else if (nread == 0) {
-                // close by peer
-                M_LOG_DEBUG("conn[%lu] closed by peer", Id());
-                HandleClose();
-            } else {
-                OnRead();
-            }
+            OnRead();
         }
     } else {
         // error
@@ -222,10 +216,16 @@ void TcpConnection::HandleEvents(int revents) {
 
     if (revents & Poller::POLLERR) {
         HandleError();
+        return;
     }
 
     if ((revents & Poller::POLLHUB) && (revents & ~Poller::POLLIN)) {
         HandleClose();
+        return;
+    }
+
+    if (m_state == ConnState_Connecting && HandleConnect() != CUBE_OK) {
+        return;
     }
 
     if (revents & Poller::POLLIN) {
@@ -268,32 +268,26 @@ void TcpConnection::HandleWrite() {
     bool has_error = false;
     if (m_eventor->Writing()) {
         //LOG_DEBUG("conn[%lu] writing!", Id());
-        if (m_state == ConnState_Connecting) {
-            if (HandleConnect() != CUBE_OK) {
-                return;
+        int nwrote = ::write(m_eventor->Fd(),
+                m_output_buffer.Peek(),
+                m_output_buffer.ReadableBytes());
+        if (nwrote < 0) {
+            if (errno == EINTR) {
+                // it is ok.
+            } else if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                // it is ok.
+            } else {
+                // error
+                has_error = true;
             }
         } else {
-            int nwrote = ::write(m_eventor->Fd(),
-                    m_output_buffer.Peek(),
-                    m_output_buffer.ReadableBytes());
-            if (nwrote < 0) {
-                if (errno == EINTR) {
-                    // it is ok.
-                } else if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                    // it is ok.
-                } else {
-                    // error
-                    has_error = true;
-                }
-            } else {
-                m_output_buffer.Retrieve(nwrote);
+            m_output_buffer.Retrieve(nwrote);
 
-                // write completely
-                if (m_output_buffer.ReadableBytes() == 0) {
-                    m_eventor->DisableWriting();
-                    if (m_write_complete_callback)
-                        m_write_complete_callback(shared_from_this());
-                }
+            // write completely
+            if (m_output_buffer.ReadableBytes() == 0) {
+                m_eventor->DisableWriting();
+                if (m_write_complete_callback)
+                    m_write_complete_callback(shared_from_this());
             }
         }
     } else {
