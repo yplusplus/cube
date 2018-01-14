@@ -23,14 +23,16 @@ UdpConnection::UdpConnection(EventLoop *event_loop,
     m_eventor(new Eventor(m_event_loop, sockfd)),
     m_input_buffer_max_length(buffer_max_length),
     m_input_buffer(new char[m_input_buffer_max_length]),
-    m_input_buffer_length(0) {
+    m_input_buffer_length(0),
+    m_closed(false) {
 
     m_eventor->SetEventsCallback(std::bind(&UdpConnection::HandleEvents, this, std::placeholders::_1));
 }
 
 UdpConnection::~UdpConnection() {
     if (m_input_buffer) {
-        delete m_input_buffer;
+        delete[] m_input_buffer;
+        m_input_buffer = NULL;
     }
 }
 
@@ -56,6 +58,10 @@ bool UdpConnection::SendTo(const InetAddr &dest_addr, const char *data, size_t l
         return false;
     }
     return true;
+}
+
+void UdpConnection::Close() {
+    HandleClose();
 }
 
 void UdpConnection::HandleEvents(int revents) {
@@ -93,8 +99,19 @@ void UdpConnection::HandleRead() {
         InetAddr peer_addr(src_addr);
         m_input_buffer_length = (size_t)ret;
         m_read_callback(shared_from_this(), m_input_buffer, m_input_buffer_length, peer_addr);
-        break;
     }
+}
+
+void UdpConnection::HandleClose() {
+    m_event_loop->AssertInLoopThread();
+
+    // has closed??
+    if (Closed()) return;
+    m_closed = true;
+    m_read_callback = NULL;
+    
+    // remove events from poller
+    m_eventor->Remove();
 }
 
 }

@@ -32,6 +32,9 @@ class UdpConnection : public std::enable_shared_from_this<UdpConnection> {
 
         const std::string &ErrMsg() const { return m_err_msg; }
 
+        void Close();
+        bool Closed() const { return m_closed; }
+
     private:
         void HandleEvents(int revents);
         void HandleRead();
@@ -51,6 +54,8 @@ class UdpConnection : public std::enable_shared_from_this<UdpConnection> {
         UdpReadCallback m_read_callback;
 
         std::string m_err_msg;
+
+        bool m_closed;
 };
 
 typedef std::shared_ptr<UdpConnection> UdpConnectionPtr;
