@@ -60,6 +60,9 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
         time_t LastActiveTime() const { return m_last_active_time; }
 
         const std::string &ErrMsg() const { return m_err_msg; }
+
+        friend class Connector;
+
     private:
 
         void OnRead();
