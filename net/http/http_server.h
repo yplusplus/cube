@@ -23,10 +23,8 @@ class HTTPServer {
         bool KeepAlive() const { return m_enable_keepalive; }
         void SetKeepAlive(bool on) { m_enable_keepalive = on; }
 
-        void RemoveConnection(HTTPConnectionPtr conn);
-
     private:
-        void OnNewConnection(::cube::net::TcpConnectionPtr conn);
+        void OnConnection(::cube::net::TcpConnectionPtr conn);
         void OnRequest(HTTPConnectionPtr conn, const HTTPRequest &request);
 
     private:
@@ -36,7 +34,6 @@ class HTTPServer {
 
         RequestCallback m_request_callback;
 
-        std::map<uint64_t, HTTPConnectionPtr> m_conns;
         bool m_enable_keepalive;
 };
 

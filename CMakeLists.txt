@@ -18,3 +18,5 @@ if (DEFINED ENV{HIREDIS_ROOT})
     message("found hiredis_root=" $ENV{HIREDIS_ROOT})
     add_subdirectory(redis)
 endif()
+
+add_subdirectory(examples)

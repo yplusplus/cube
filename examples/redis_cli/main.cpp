@@ -18,7 +18,6 @@ using namespace std::placeholders;
 
 EventLoop g_event_loop;
 InetAddr g_server_addr("127.0.0.1", 6379);
-std::unique_ptr<RedisClient> g_redis_client(new RedisClient(&g_event_loop, g_server_addr, "123"));
 int g_reply_count = 0;
 
 void HandleSignal(int sig) {
@@ -47,8 +46,13 @@ void print_reply(redisReply *reply) {
             }
             return;
         case REDIS_REPLY_INTEGER:
-            cout << reply->integer << endl;
+            cout << "integer = " << reply->integer << endl;
             return;
+        case REDIS_REPLY_NIL:
+            cout << "nil" << endl;
+            return;
+        default:
+            cout << "unknown reply type =" << reply->type << endl;
     }
 }
 
@@ -63,16 +67,14 @@ void OnRedisReply(redisReply *reply) {
 int main() {
     ::cube::logging::SetLoggerLevel(::cube::logging::LogLevel_Trace);
     signal(SIGINT, HandleSignal);
+    std::unique_ptr<RedisClient> g_redis_client(new RedisClient(&g_event_loop, g_server_addr, "123"));
     RedisCommands cmds;
     RedisCommand cmd1, cmd2;
     cmd1 << "SET" << "cube" << "cUb\r\nE10";
-    cmd2 << "GET" << "cube 1";
-    cmds.Add(cmd1)
-        .Add(cmd2)
-        .Add(RedisCommand() << "LPUSH" << "cube1" << "!@#!@#");
+    cmd2 << "GET" << "cube";
+    cmds.Add(cmd1).Add(cmd2);
     g_redis_client->Exec(std::bind(OnRedisReply, _1), 1000, cmd2);
     g_redis_client->MultiExec(std::bind(OnRedisReply, _1), 5000, cmds);
     g_event_loop.Loop();
-    g_redis_client.reset();
     return 0;
 }

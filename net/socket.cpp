@@ -15,6 +15,7 @@ namespace net {
 
 Socket::Socket(int sockfd) 
     : m_sockfd(sockfd) {
+    assert(sockfd >= 0);
 }
 
 Socket::~Socket() {

@@ -20,7 +20,7 @@ class HTTPRequest {
             PARSE_DONE,
         };
 
-        typedef std::map<std::string, std::vector<std::string> > Headers;
+        typedef std::map<std::string, std::string> Headers;
 
         HTTPRequest();
         ~HTTPRequest();
@@ -33,7 +33,7 @@ class HTTPRequest {
         const std::string &Proto() const { return m_proto; }
         const std::string &Header(const std::string &key) const {
             auto it = m_headers.find(key);
-            if (it != m_headers.end()) return it->second[0];
+            if (it != m_headers.end()) return it->second;
             return HTTP_HEADER_NONE;
         }
         const std::string &ContentType() const { return Header("Content-Type"); }
@@ -41,7 +41,7 @@ class HTTPRequest {
             auto it = m_headers.find("Content-Length");
             size_t content_length = 0;
             if (it != m_headers.end()) {
-                int tmp = stoi(it->second[0]);
+                int tmp = stoi(it->second);
                 if (tmp > 0) content_length = tmp;
             }
             return content_length;
@@ -50,17 +50,10 @@ class HTTPRequest {
         bool KeepAlive() const;
 
         // setter
-        void SetURL(const std::string &url) { m_url = url; }
+        void SetURL(const std::string &url);
         void SetMethod(const std::string &method) { m_method = method; }
         void SetProto(const std::string &proto) { m_proto = proto; }
-        void SetHeader(const std::string &key, const std::string &value) {
-            auto it = m_headers.find(key);
-            if (it == m_headers.end()) {
-                m_headers[key].push_back(value);
-            } else {
-                it->second.push_back(value);
-            }
-        }
+        void SetHeader(const std::string &key, const std::string &value) { m_headers[key] = value; }
         void SetContentType(const std::string &value) { SetHeader("Content-Type", value); }
         void SetContentLength(size_t len) { SetHeader("Content-Length", std::to_string((unsigned long long)len)); }
         void SetKeepAlive(bool on);
@@ -80,7 +73,7 @@ class HTTPRequest {
         // request line
         std::string m_url;      // "/"
         std::string m_method;   // "GET", "POST", etc.
-        std::string m_proto;    // "HTTP/1.0"
+        std::string m_proto;    // "HTTP/1.1"
 
         // Headers contains the request header fields either received
         // by the server or to be sent by the client.

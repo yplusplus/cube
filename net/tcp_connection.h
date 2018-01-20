@@ -27,16 +27,18 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
         TcpConnection(EventLoop *event_loop, int sockfd, const InetAddr &local_addr, const InetAddr &peer_addr);
         ~TcpConnection();
 
-        // callback settor
-        void SetConnectCallback(const ConnectCallback &cb) { m_connect_callback = cb; }
-        void SetDisconnectCallback(const DisconnectCallback &cb) { m_disconnect_callback = cb; }
+        // connection callback settor
+        void SetConnectionCallback(const ConnectionCallback &cb) { m_connection_callback = cb; }
+        // close callback settor
+        void SetCloseCallback(const CloseCallback &cb) { m_close_callback = cb; }
         //void SetWriteCompleteCallback(const WriteCompleteCallback &cb) { m_write_complete_callback = cb; }
 
         uint64_t Id() const { return m_conn_id; }
         const InetAddr &LocalAddr() const { return m_local_addr; }
         const InetAddr &PeerAddr() const { return m_peer_addr; }
 
-        void Initialize();
+        // call when connection state become ConnState_Connected
+        void OnConnectionEstablished();
 
         // run callback when the read data's length >= read_bytes
         void ReadBytes(size_t read_bytes, const ReadCallback &cb);
@@ -56,10 +58,16 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
         void EnableReading();
         void DisableReading();
+        void EnableWriting();
+        void DisableWriting();
 
         time_t LastActiveTime() const { return m_last_active_time; }
 
         const std::string &ErrMsg() const { return m_err_msg; }
+
+        ConnState GetState() const { return m_state; }
+
+        EventLoop *GetEventLoop() { return m_event_loop; }
 
         friend class Connector;
 
@@ -73,6 +81,11 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
         void HandleWrite();
         void HandleError();
         void HandleClose();
+
+    private:
+        // noncopyable
+        TcpConnection(const TcpConnection &) = delete;
+        TcpConnection &operator=(const TcpConnection &) = delete;
 
     private:
 
@@ -98,10 +111,14 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
 
         time_t m_last_active_time;
 
-        ConnectCallback m_connect_callback;
-        DisconnectCallback m_disconnect_callback;
+        // callback when connection state changed
+        ConnectionCallback m_connection_callback;
+        // callback when closed connection
+        CloseCallback m_close_callback;
+
         ReadCallback m_read_callback;
         WriteCompleteCallback m_write_complete_callback;
+
         std::string m_err_msg;
 };
 

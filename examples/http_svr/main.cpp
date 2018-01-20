@@ -22,10 +22,12 @@ void HandleSignal(int sig) {
 }
 
 void HelloHandler(HTTPConnectionPtr conn, const HTTPRequest &request) {
+    cout << request.KeepAlive() << endl;
     HTTPResponse response;
     response.SetProto(request.Proto());
     response.SetStatusCode(HTTPStatus_OK);
     response.Write("Hello, World!");
+    cout << response.ToString() << endl;
     conn->SendResponse(response);
 }
 
@@ -34,9 +36,10 @@ int main() {
 
     InetAddr server_addr(8456);
     HTTPServer http_server(&g_event_loop, server_addr);
-    http_server.SetKeepAlive(true);
+    //http_server.SetKeepAlive(true);
     http_server.SetRequestCallback(std::bind(&HelloHandler, _1, _2));
     assert(http_server.Start());
+    printf("http server start succ, listen addr=%s\n", server_addr.IpPort().c_str());
 
     g_event_loop.Loop();
 

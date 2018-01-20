@@ -20,7 +20,7 @@ class HTTPResponse {
             PARSE_DONE,
         };
 
-        typedef std::map<std::string, std::vector<std::string> > Headers;
+        typedef std::map<std::string, std::string> Headers;
 
         HTTPResponse();
         ~HTTPResponse();
@@ -33,17 +33,16 @@ class HTTPResponse {
         const std::string &StatusMessage() const { return m_status_message; }
         const std::string &Header(const std::string &key) const {
             auto it = m_headers.find(key);
-            if (it != m_headers.end()) return it->second[0];
+            if (it != m_headers.end()) return it->second;
             // TODO
-            static const std::string None("__CUBE_NONE__");
-            return None;
+            return HTTP_HEADER_NONE;
         }
         const std::string &ContentType() const { return Header("Content-Length"); }
         size_t ContentLength() const {
             auto it = m_headers.find("Content-Length");
             size_t content_length = 0;
             if (it != m_headers.end()) {
-                int tmp = std::stoi(it->second[0]);
+                int tmp = std::stoi(it->second);
                 if (tmp > 0) content_length = tmp;
             }
             return content_length;
@@ -58,14 +57,7 @@ class HTTPResponse {
             m_status_message = HTTPUtil::GetHTTPStatusReason(m_status_code);
         }
         void SetStatusMessage(const std::string status_message) { m_status_message = status_message; }
-        void SetHeader(const std::string &key, const std::string &value) {
-            auto it = m_headers.find(key);
-            if (it == m_headers.end()) {
-                m_headers[key].push_back(value);
-            } else {
-                it->second.push_back(value);
-            }
-        }
+        void SetHeader(const std::string &key, const std::string &value) { m_headers[key] = value; }
         void SetContentType(const std::string &value) { SetHeader("Content-Type", value); }
         void SetContentLength(size_t len) { SetHeader("Content-Length", std::to_string((unsigned long long)len)); }
         void SetKeepAlive(bool on);

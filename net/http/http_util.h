@@ -73,6 +73,8 @@ enum {
 };
 
 const std::string HTTP_HEADER_NONE("__Cube_Header_None__");
+const std::string HTTP_VERSION_1_0("HTTP/1.0");
+const std::string HTTP_VERSION_1_1("HTTP/1.1");
 
 class HTTPUtil {
     public:

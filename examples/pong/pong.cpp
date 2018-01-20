@@ -1,4 +1,3 @@
-#include <map>
 #include <iostream>
 #include <functional>
 
@@ -13,21 +12,15 @@ using namespace std;
 using namespace std::placeholders;
 
 EventLoop g_event_loop;
-std::map<uint64_t, TcpConnectionPtr> g_conns;
 int g_pings = 0;
 
 void OnPing(TcpConnectionPtr, Buffer *);
-void OnDisconnect(TcpConnectionPtr);
 void OnNewConnection(TcpConnectionPtr);
 
-void OnNewConnection(TcpConnectionPtr conn) {
-    conn->ReadBytes(4, std::bind(OnPing, _1, _2));
-    conn->SetDisconnectCallback(std::bind(OnDisconnect, _1));
-    g_conns[conn->Id()] = std::move(conn);
-}
-
-void OnDisconnect(TcpConnectionPtr conn) {
-    g_conns.erase(conn->Id());
+void OnConnection(TcpConnectionPtr conn) {
+    if (conn->GetState() == ::cube::net::TcpConnection::ConnState_Connected) {
+        conn->ReadBytes(4, std::bind(OnPing, _1, _2));
+    }
 }
 
 void OnPing(TcpConnectionPtr conn, Buffer *buffer) {
@@ -51,8 +44,9 @@ int main() {
     g_event_loop.RunPeriodic(ShowStat, 1000);
     InetAddr addr(8456);
     TcpServer server(&g_event_loop, addr);
-    server.SetNewConnectionCallback(std::bind(OnNewConnection, _1));
+    server.SetConnectionCallback(std::bind(OnConnection, _1));
     server.Start();
+    printf("server start succ, listen addr=%s", addr.IpPort().c_str());
     g_event_loop.Loop();
     return 0;
 }

@@ -14,8 +14,14 @@ HTTPResponse::~HTTPResponse() {
 }
 
 bool HTTPResponse::KeepAlive() const {
-    std::string value = Header("Connection");
-    return value == "Keep-Alive" || value == "keep-alive";
+    const std::string value = Header("Connection");
+
+    // HTTP/1.1 supports keep-alive default
+    if (value == HTTP_HEADER_NONE) {
+        return m_proto == HTTP_VERSION_1_1;
+    }
+
+    return (value == "Keep-Alive" || value == "keep-alive");
 }
 
 void HTTPResponse::SetKeepAlive(bool on) {

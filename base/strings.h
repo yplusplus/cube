@@ -23,6 +23,8 @@ std::string &Trim(std::string &str, const std::string &charlist = " \t\r\n");
 void Split(const std::string &str, const std::string &splitor, std::vector<std::string> &split_strs, int split_num = -1, bool remove_empty_str = false);
 void Split(const std::string &str, const std::vector<std::string> &splitors, std::vector<std::string> &split_strs, int split_num = -1, bool remove_empty_str = false);
 
+bool BeginWith(const std::string &str, const std::string &prefix);
+
 }
 
 }

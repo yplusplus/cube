@@ -17,10 +17,9 @@ class HTTPClientConnection : public std::enable_shared_from_this<HTTPClientConne
         typedef std::function<void(std::shared_ptr<HTTPClientConnection>, const HTTPResponse *)> ResponseCallback;
         typedef std::function<void(std::shared_ptr<HTTPClientConnection>)> DisconnectionCallback;
 
-        HTTPClientConnection(::cube::net::EventLoop *event_loop, ::cube::net::TcpConnectionPtr conn);
+        HTTPClientConnection(::cube::net::TcpConnectionPtr conn);
         ~HTTPClientConnection();
 
-        void SetDisconnectCallback(const DisconnectionCallback &cb) { m_disconnect_callback = cb; }
         bool SendRequest(const HTTPRequest &request, const ResponseCallback &response_callback);
 
         uint64_t Id() const { return m_conn->Id(); }
@@ -32,8 +31,7 @@ class HTTPClientConnection : public std::enable_shared_from_this<HTTPClientConne
         const ::cube::net::InetAddr PeerAddr() const { return m_conn->PeerAddr(); }
 
     private:
-        void OnConnect(::cube::net::TcpConnectionPtr conn, int status);
-        void OnDisconnect(::cube::net::TcpConnectionPtr conn);
+        void OnConnection(::cube::net::TcpConnectionPtr conn);
         void OnHeaders(::cube::net::TcpConnectionPtr conn, Buffer *buffer);
         bool ParseHeaders(Buffer *buffer);
         void OnBody(::cube::net::TcpConnectionPtr conn, Buffer *buffer);
@@ -48,8 +46,6 @@ class HTTPClientConnection : public std::enable_shared_from_this<HTTPClientConne
 
         HTTPResponse m_response;
         ResponseCallback m_response_callback;
-
-        DisconnectionCallback m_disconnect_callback;
 };
 
 typedef std::shared_ptr<HTTPClientConnection> HTTPClientConnectionPtr;

@@ -157,6 +157,13 @@ void Split(const std::string &str, const std::vector<std::string> &splitors, std
     }
 }
 
+bool BeginWith(const std::string &str, const std::string &prefix) {
+    if (str.length() < prefix.length())
+        return false;
+
+    return str.substr(0, prefix.length()) == prefix;
+}
+
 }
 
 }
