@@ -8,7 +8,8 @@
 
 namespace cube {
 
-// 构造函数，调用epoll_create创建epoll句柄
+namespace net {
+
 Poller::Poller(EventLoop *event_loop)
     : m_event_loop(event_loop),
     m_epoll_fd(::epoll_create(EPOLL_EVENT_SIZE)) {
@@ -37,9 +38,13 @@ bool Poller::UpdateEvents(Eventor *eventor) {
 bool Poller::RemoveEvents(Eventor *eventor) {
     // 从poller中删除一个fd，assert保证poller中已经注册了该fd
     m_event_loop->AssertInLoopThread();
-    assert(m_eventors.count(eventor->Fd()) > 0);
-    m_eventors.erase(eventor->Fd());
-    return EpollOperate(EPOLL_CTL_DEL, eventor);
+
+    auto it = m_eventors.find(eventor->Fd());
+    if (it != m_eventors.end()) {
+        m_eventors.erase(it);
+        return EpollOperate(EPOLL_CTL_DEL, eventor);
+    }
+    return true;
 }
 
 bool Poller::EpollOperate(int operation, Eventor *eventor) {
@@ -70,6 +75,8 @@ void Poller::Poll(int timeout_ms, std::vector<Eventor *> &eventors) {
             eventors[i]->SetRevents(m_epoll_events[i].events);
         }
     }
+}
+
 }
 
 }

@@ -26,6 +26,8 @@
 
 namespace cube {
 
+namespace net {
+
 InetAddr::InetAddr(const struct sockaddr_in &addr) 
     : m_addr(addr) {
 }
@@ -88,6 +90,8 @@ uint32_t InetAddr::NetworkOrderIp() const {
 
 uint16_t InetAddr::NetworkOrderPort() const {
     return m_addr.sin_port;
+}
+
 }
 
 }

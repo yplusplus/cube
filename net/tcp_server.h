@@ -6,19 +6,25 @@
 
 #include "callbacks.h"
 #include "inet_addr.h"
+#include "event_loop.h"
+#include "tcp_connection.h"
 
 namespace cube {
+
+namespace net {
 
 class EventLoop;
 class Acceptor;
 
-// combine it into your class and provide a NewConnectionCallback
+// combine it into your class and provide a ConnectionCallback
 class TcpServer {
     public:
         TcpServer(EventLoop *event_loop, const InetAddr &server_addr);
         ~TcpServer();
 
-        void SetNewConnectionCallback(const NewConnectionCallback &cb) { m_new_connection_callback = cb; }
+        // for tcp connection
+        void SetConnectionCallback(const ConnectionCallback &cb)
+        { m_connection_callback = cb; }
 
         bool Start();
         void Stop();
@@ -29,18 +35,22 @@ class TcpServer {
     private:
         void OnAccept(int sockfd);
 
+        void RemoveConnection(TcpConnectionPtr conn);
+
     private:
         EventLoop *m_event_loop;
 
-        InetAddr m_server_addr;
+        const InetAddr &m_server_addr;
 
         std::unique_ptr<Acceptor> m_acceptor;
 
-        // 新的客户端连接建立后的的回调函数
-        NewConnectionCallback m_new_connection_callback;
+        ConnectionCallback m_connection_callback;
         std::string m_err_msg;
+
+        std::map<uint64_t, TcpConnectionPtr> m_conns_map;
 };
 
 }
 
+}
 #endif

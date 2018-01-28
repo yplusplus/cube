@@ -1,11 +1,21 @@
-#include "string_util.h"
-
 #include <stdarg.h>
 #include <stdlib.h>
+#include <cassert>
+#include <cstring>
+
+#include "strings.h"
 
 namespace cube {
 
 namespace strings {
+
+char *safe_strncpy(char *dest, const char *src, size_t n) {
+    assert(n > 0);
+    dest = strncpy(dest, src, n);
+    // make sure dest is null-terminated
+    dest[n - 1] = '\0';
+    return dest;
+}
 
 void InternalAppend(std::string& dst, const char* fmt, va_list ap)
 {
@@ -145,6 +155,13 @@ void Split(const std::string &str, const std::vector<std::string> &splitors, std
             split_strs.push_back(s);
         }
     }
+}
+
+bool BeginWith(const std::string &str, const std::string &prefix) {
+    if (str.length() < prefix.length())
+        return false;
+
+    return str.substr(0, prefix.length()) == prefix;
 }
 
 }

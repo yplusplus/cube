@@ -1,5 +1,5 @@
 #include "base/logging.h"
-#include "base/string_util.h"
+#include "base/strings.h"
 #include "net/event_loop.h"
 #include "http_cli_connection.h"
 #include "http_request.h"
@@ -10,13 +10,16 @@ namespace cube {
 
 namespace http {
 
-HTTPClientConnection::HTTPClientConnection(EventLoop *event_loop, TcpConnectionPtr conn)
-    : m_event_loop(event_loop),
+HTTPClientConnection::HTTPClientConnection(
+        ::cube::net::TcpConnectionPtr conn)
+    : m_event_loop(conn->GetEventLoop()),
     m_conn(conn),
     m_requesting(false) {
 
-    m_conn->SetConnectCallback(std::bind(&HTTPClientConnection::OnConnect, this, _1, _2));
-    m_conn->SetDisconnectCallback(std::bind(&HTTPClientConnection::OnDisconnect, this, _1));
+    // set connection callback
+    conn->SetConnectionCallback(
+            std::bind(&HTTPClientConnection::OnConnection, this,
+                std::placeholders::_1));
 }
 
 HTTPClientConnection::~HTTPClientConnection() {
@@ -25,8 +28,11 @@ HTTPClientConnection::~HTTPClientConnection() {
 
 bool HTTPClientConnection::SendRequest(const HTTPRequest &request, const ResponseCallback &response_callback) {
     assert(!m_response_callback);
+    assert(!m_requesting);
 
+    // TODO: more effective
     if (!m_conn->Write(request.ToString())) {
+        M_LOG_WARN("http client connection send request failed");
         return false;
     }
 
@@ -36,30 +42,27 @@ bool HTTPClientConnection::SendRequest(const HTTPRequest &request, const Respons
     return true;
 }
 
-void HTTPClientConnection::OnConnect(TcpConnectionPtr conn, int status) {
-    // connect failed
-    if (status != CUBE_OK) {
+void HTTPClientConnection::OnConnection(::cube::net::TcpConnectionPtr conn) {
+    M_LOG_DEBUG("OnConnection conn[%lu] state[%d]", conn->Id(), conn->GetState());
+
+    // we only care about Disconnected state
+    if (conn->GetState() == ::cube::net::TcpConnection::ConnState_Disconnected) {
+        auto http_cli_conn = shared_from_this();
+        if (m_requesting) {
+
+            assert(m_response_callback);
+            ResponseCallback response_callback = std::move(m_response_callback);
+            m_requesting = false;
+            // callback with a NULL response
+            response_callback(http_cli_conn, (const HTTPResponse *)NULL);
+        }
     }
 }
 
-void HTTPClientConnection::OnDisconnect(TcpConnectionPtr conn) {
-    // run response callback with NULL response
-    if (m_response_callback) {
-        //m_event_loop->Post(std::bind(response_callback, shared_from_this(), (const HTTPResponse *)NULL));
-        ResponseCallback response_callback = std::move(m_response_callback);
-        m_response_callback = NULL;
-        m_requesting = false;
-        response_callback(shared_from_this(), (const HTTPResponse *)NULL);
-    }
-
-    if (m_disconnect_callback)
-        m_disconnect_callback(shared_from_this());
-}
-
-void HTTPClientConnection::OnHeaders(TcpConnectionPtr conn, Buffer *buffer) {
+void HTTPClientConnection::OnHeaders(::cube::net::TcpConnectionPtr conn, Buffer *buffer) {
     bool succ = ParseHeaders(buffer);
     if (!succ) {
-        M_LOG_ERROR("conn[%lu] parse headers falied", conn->Id());
+        M_LOG_WARN("conn[%lu] parse headers falied", conn->Id());
         conn->Close();
         return;
     }
@@ -86,12 +89,13 @@ bool HTTPClientConnection::ParseHeaders(Buffer *buffer) {
     // Proto StatusCode StatusMessage
     std::vector<std::string> fields;
     ::cube::strings::Split(lines[0], " ", fields, 2);
-    if (fields.size() != 3) {
+    if (fields.size() < 2 || fields.size() > 3) {
         return false;
     }
     m_response.SetProto(fields[0]);
     m_response.SetStatusCode(std::stoi(fields[1]));
-    m_response.SetStatusMessage(fields[2]);
+    if (fields.size() > 2)
+        m_response.SetStatusMessage(fields[2]);
 
     // headers
     for (size_t i = 1; i < lines.size(); i++) {
@@ -109,7 +113,7 @@ bool HTTPClientConnection::ParseHeaders(Buffer *buffer) {
     return true;
 }
 
-void HTTPClientConnection::OnBody(TcpConnectionPtr conn, Buffer *buffer) {
+void HTTPClientConnection::OnBody(::cube::net::TcpConnectionPtr conn, Buffer *buffer) {
     // TODO Parse body according to ContentType
     size_t body_len = m_response.ContentLength();
     if (buffer->ReadableBytes() < body_len) {
@@ -123,10 +127,10 @@ void HTTPClientConnection::OnBody(TcpConnectionPtr conn, Buffer *buffer) {
 
 void HTTPClientConnection::HandleResponse() {
     assert(m_response_callback);
+    assert(m_requesting);
 
     m_requesting = false;
     ResponseCallback response_callback = std::move(m_response_callback);
-    m_response_callback = NULL;
     response_callback(shared_from_this(), &m_response);
 }
 

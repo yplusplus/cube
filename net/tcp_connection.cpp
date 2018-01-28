@@ -2,9 +2,9 @@
 
 #include "tcp_connection.h"
 
+#include "base/time_util.h"
 #include "base/logging.h"
-#include "base/string_util.h"
-#include "time_util.h"
+#include "base/strings.h"
 #include "event_loop.h"
 #include "eventor.h"
 #include "socket.h"
@@ -13,6 +13,12 @@ using namespace std::placeholders;
 
 namespace cube {
 
+namespace net {
+
+static void DefaultConnectionCallback(const TcpConnectionPtr &conn) {
+    // do nothing
+}
+
 uint64_t TcpConnection::m_next_conn_id(1);
 
 TcpConnection::TcpConnection(EventLoop *event_loop,
@@ -20,14 +26,16 @@ TcpConnection::TcpConnection(EventLoop *event_loop,
         const InetAddr &local_addr,
         const InetAddr &peer_addr)
     : m_event_loop(event_loop),
+    // TODO: std::atomic
     m_conn_id(__sync_fetch_and_add(&m_next_conn_id, 1)),
     m_sock(new Socket(sockfd)),
     m_eventor(new Eventor(m_event_loop, sockfd)),
     m_local_addr(local_addr),
     m_peer_addr(peer_addr),
-    m_state(ConnState_Connected),
+    m_state(ConnState_Connecting),
     m_read_bytes(-1),
-    m_last_active_time(TimeUtil::CurrentTime()) {
+    m_last_active_time(TimeUtil::CurrentTime()),
+    m_connection_callback(std::bind(&DefaultConnectionCallback, std::placeholders::_1)) {
 
     m_eventor->SetEventsCallback(std::bind(&TcpConnection::HandleEvents, this, _1));
 
@@ -142,25 +150,38 @@ void TcpConnection::CloseAfter(int64_t delay_ms) {
 }
 
 void TcpConnection::EnableReading() {
+    m_event_loop->AssertInLoopThread();
     if (Closed()) return;
     m_eventor->EnableReading();
 }
 
 void TcpConnection::DisableReading() {
+    m_event_loop->AssertInLoopThread();
     if (Closed()) return;
     m_eventor->DisableReading();
 }
 
-void TcpConnection::Initialize() {
-    TcpConnectionPtr conn(shared_from_this());
-    m_eventor->EnableReading();
+void TcpConnection::EnableWriting() {
+    m_event_loop->AssertInLoopThread();
+    if (Closed()) return;
+    m_eventor->EnableWriting();
+}
 
-    // For server
-    if (m_state == ConnState_Connected) {
-        if (m_connect_callback) {
-            m_connect_callback(conn, CUBE_OK);
-        }
-    }
+void TcpConnection::DisableWriting() {
+    m_event_loop->AssertInLoopThread();
+    if (Closed()) return;
+    m_eventor->DisableWriting();
+}
+
+void TcpConnection::OnConnectionEstablished() {
+    m_event_loop->AssertInLoopThread();
+
+    assert(m_state == ConnState_Connecting);
+    m_state = ConnState_Connected;
+
+    m_eventor->EnableReading();
+    TcpConnectionPtr conn(shared_from_this());
+    m_connection_callback(conn);
 }
 
 void TcpConnection::OnRead() {
@@ -184,32 +205,19 @@ void TcpConnection::HandleRead() {
 
     if (Closed()) return;
 
-    bool has_error = false;
-    if (m_eventor->Reading()) {
-        if (m_state == ConnState_Connecting) {
-            if (HandleConnect() != CUBE_OK) {
-                return;
-            }
-        } else {
-            ssize_t nread = m_input_buffer.ReadFromFd(m_sock->Fd());
-            if (nread < 0) {
-                // error
-                has_error = true;
-            } else if (nread == 0) {
-                // close by peer
-                M_LOG_DEBUG("conn[%lu] closed by peer", Id());
-                HandleClose();
-            } else {
-                OnRead();
-            }
-        }
-    } else {
+    ssize_t nread = m_input_buffer.ReadFromFd(m_sock->Fd());
+    if (nread < 0) {
         // error
-        has_error = true;
-    }
-
-    if (has_error) 
         HandleError();
+        return;
+    } else if (nread == 0) {
+        // close by peer
+        M_LOG_DEBUG("conn[%lu] closed by peer", Id());
+        HandleClose();
+        return;
+    } else {
+        OnRead();
+    }
 }
 
 void TcpConnection::HandleEvents(int revents) {
@@ -220,10 +228,28 @@ void TcpConnection::HandleEvents(int revents) {
 
     if (revents & Poller::POLLERR) {
         HandleError();
+        return;
     }
 
     if ((revents & Poller::POLLHUB) && (revents & ~Poller::POLLIN)) {
         HandleClose();
+        return;
+    }
+
+    if (m_state == ConnState_Connecting) {
+        if (HandleConnect() == CUBE_OK) {
+            assert(m_eventor->Writing());
+            // async connect suss
+            // disable writing when 
+            if (m_output_buffer.ReadableBytes() == 0) {
+                DisableWriting();
+            }
+            OnConnectionEstablished();
+        } else {
+            // error
+            HandleError();
+            return;
+        }
     }
 
     if (revents & Poller::POLLIN) {
@@ -246,15 +272,9 @@ int TcpConnection::HandleConnect() {
     int ret = sockets::GetSocketError(m_sock->Fd(), saved_error);
     if (ret || saved_error) {
         M_LOG_ERROR("conn[%lu] error on connecting, error=%d", m_conn_id, saved_error);
-        if (m_connect_callback)
-            m_connect_callback(shared_from_this(), CUBE_ERR);
-        HandleError();
         return CUBE_ERR;
     }
 
-    m_state = ConnState_Connected;
-    if (m_connect_callback)
-        m_connect_callback(shared_from_this(), CUBE_OK);
     return CUBE_OK;
 }
 
@@ -263,44 +283,36 @@ void TcpConnection::HandleWrite() {
 
     if (Closed()) return;
 
-    bool has_error = false;
-    if (m_eventor->Writing()) {
-        //LOG_DEBUG("conn[%lu] writing!", Id());
-        if (m_state == ConnState_Connecting) {
-            if (HandleConnect() != CUBE_OK) {
-                return;
-            }
-        } else {
-            int nwrote = ::write(m_eventor->Fd(),
-                    m_output_buffer.Peek(),
-                    m_output_buffer.ReadableBytes());
-            if (nwrote < 0) {
-                if (errno == EINTR) {
-                    // it is ok.
-                } else if (errno == EWOULDBLOCK || errno == EAGAIN) {
-                    // it is ok.
-                } else {
-                    // error
-                    has_error = true;
-                }
-            } else {
-                m_output_buffer.Retrieve(nwrote);
-
-                // write completely
-                if (m_output_buffer.ReadableBytes() == 0) {
-                    m_eventor->DisableWriting();
-                    if (m_write_complete_callback)
-                        m_write_complete_callback(shared_from_this());
-                }
-            }
-        }
-    } else {
-        // error
-        has_error = true;
+    // no data to write
+    if (m_output_buffer.ReadableBytes() == 0) {
+        DisableWriting();
+        return;
     }
 
-    if (has_error) 
-        HandleError();
+    //LOG_DEBUG("conn[%lu] writing!", Id());
+    int nwrote = ::write(m_eventor->Fd(),
+            m_output_buffer.Peek(),
+            m_output_buffer.ReadableBytes());
+    if (nwrote < 0) {
+        if (errno == EINTR) {
+            // it is ok.
+        } else if (errno == EWOULDBLOCK || errno == EAGAIN) {
+            // it is ok.
+        } else {
+            // error
+            HandleError();
+            return;
+        }
+    } else {
+        m_output_buffer.Retrieve(nwrote);
+    }
+
+    // write completely
+    if (m_output_buffer.ReadableBytes() == 0) {
+        m_eventor->DisableWriting();
+        if (m_write_complete_callback)
+            m_write_complete_callback(shared_from_this());
+    }
 }
 
 void TcpConnection::HandleClose() {
@@ -309,19 +321,26 @@ void TcpConnection::HandleClose() {
     // has closed??
     if (Closed()) return;
     m_state = ConnState_Disconnected;
-    m_write_complete_callback = NULL;
-    m_read_callback = NULL;
 
     // remove events from poller
     m_eventor->Remove();
 
-    if (m_disconnect_callback)
-        m_disconnect_callback(shared_from_this());
+    TcpConnectionPtr guard(shared_from_this());
+    m_connection_callback(guard);
+
+    // prevent circular references
+    m_connection_callback = std::bind(&DefaultConnectionCallback, std::placeholders::_1);
+    m_write_complete_callback = NULL;
+    m_read_callback = NULL;
+
+    m_close_callback(guard);
 }
 
 void TcpConnection::HandleError() {
     m_event_loop->AssertInLoopThread();
     HandleClose();
+}
+
 }
 
 }

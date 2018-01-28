@@ -12,6 +12,8 @@ using namespace std::placeholders;
 
 namespace cube {
 
+namespace net {
+
 Acceptor::Acceptor(EventLoop *event_loop,
 	const InetAddr &listen_addr,
     const AcceptCallback &accept_callback)
@@ -77,6 +79,8 @@ void Acceptor::HandleRead() {
     } else {
         // error
     }
+}
+
 }
 
 }

@@ -6,7 +6,8 @@
 
 namespace cube {
 
-// 对unix API的封装，对IPv4地址等进行操作
+namespace net {
+
 class InetAddr {
     public:
         InetAddr() {}
@@ -39,5 +40,5 @@ class InetAddr {
 
 }
 
-
+}
 #endif

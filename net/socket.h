@@ -3,30 +3,32 @@
 
 namespace cube {
 
+namespace net {
+
 class InetAddr;
 
 // 对unix API的封装，对socket句柄进行操作
 // 对socket属性的修改，根据socket句柄获取IPv4地址等等
 
 namespace sockets {
-    int CreateStreamSocket();
-    int CreateDgramSocket();
-    bool Bind(int sockfd, const InetAddr &bind_addr);
-    int CreateNonBlockStreamSocket();
-    bool SetNonBlocking(int sockfd, bool on);
-    bool SetNoDelay(int sockfd, bool on);
-    bool SetQuickAck(int sockfd, bool on);
-    bool SetReuseAddr(int sockfd, bool on);
-    bool SetKeepAlive(int sockfd, bool on);
-    bool SetRecvBuffSize(int sockfd, int size);
-    bool SetSendBuffSize(int sockfd, int size);
-    int GetSocketError(int sockfd, int &saved_errno);
 
-    InetAddr GetLocalAddr(int sockfd);
-    InetAddr GetPeerAddr(int sockfd);
+int CreateStreamSocket();
+int CreateDgramSocket();
+bool Bind(int sockfd, const InetAddr &bind_addr);
+int CreateNonBlockStreamSocket();
+bool SetNonBlocking(int sockfd, bool on);
+bool SetNoDelay(int sockfd, bool on);
+bool SetQuickAck(int sockfd, bool on);
+bool SetReuseAddr(int sockfd, bool on);
+bool SetKeepAlive(int sockfd, bool on);
+bool SetRecvBuffSize(int sockfd, int size);
+bool SetSendBuffSize(int sockfd, int size);
+int GetSocketError(int sockfd, int &saved_errno);
+
+InetAddr GetLocalAddr(int sockfd);
+InetAddr GetPeerAddr(int sockfd);
+
 }
-
-class InetAddr;
 
 
 // 对socket的封装，包括构造socket，bind，listen，accept等API的封装
@@ -53,6 +55,8 @@ class Socket {
     private:
         const int m_sockfd;
 };
+
+}
 
 }
 

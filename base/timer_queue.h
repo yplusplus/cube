@@ -56,5 +56,4 @@ class TimerQueue {
 };
 
 }
-
 #endif

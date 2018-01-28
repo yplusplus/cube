@@ -2,16 +2,18 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include "base/time_util.h"
+#include "base/timer_queue.h"
 #include "event_loop.h"
 #include "eventor.h"
 #include "poller.h"
-#include "timer_queue.h"
-#include "time_util.h"
 #include "base/logging.h"
 
 using namespace std::placeholders;
 
 namespace cube {
+
+namespace net {
 
 static int CreateEventFd() {
     int event_fd = ::eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
@@ -81,10 +83,8 @@ TimerId EventLoop::RunPeriodic(const Task &task, int64_t interval_ms) {
     return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMillis() + interval_ms, interval_ms);
 }
 
-
-TimerId EventLoop::RunPeriodic(const Task &task, int64_t expiration_ms, int64_t interval_ms) {
-    // 添加循环执行的任务，开始时间是expiration_ms，循环时间间隔是interval_ms
-    return m_timer_queue->AddTimer(task, expiration_ms, interval_ms);
+TimerId EventLoop::RunPeriodic(const Task &task, int64_t delay_ms, int64_t interval_ms) {
+    return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMillis() + delay_ms, interval_ms);
 }
 
 void EventLoop::CancelTimer(TimerId timer_id) {
@@ -162,6 +162,8 @@ void EventLoop::WakeUp() {
     uint64_t one = 1;
     ssize_t ret = ::write(m_wakeup_fd, &one, sizeof(one));
     (void)ret;
+}
+
 }
 
 }

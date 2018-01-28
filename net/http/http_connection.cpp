@@ -1,5 +1,5 @@
 #include "base/logging.h"
-#include "base/string_util.h"
+#include "base/strings.h"
 
 #include "net/event_loop.h"
 
@@ -14,14 +14,14 @@ namespace cube {
 
 namespace http {
 
-HTTPConnection::HTTPConnection(EventLoop *event_loop, HTTPServer *server, const TcpConnectionPtr &conn, const RequestCallback &request_callback)
-    : m_event_loop(event_loop),
+HTTPConnection::HTTPConnection( HTTPServer *server,
+        const ::cube::net::TcpConnectionPtr &conn,
+        const RequestCallback &request_callback)
+    : m_event_loop(conn->GetEventLoop()),
     m_server(server),
     m_conn(conn),
     m_request_callback(request_callback) {
 
-    conn->SetConnectCallback(std::bind(&HTTPConnection::OnConnect, this, _1, _2));
-    conn->SetDisconnectCallback(std::bind(&HTTPConnection::OnDisconnect, this, _1));
     conn->ReadUntil("\r\n\r\n", std::bind(&HTTPConnection::OnHeaders, this, _1, _2));
 }
 
@@ -29,21 +29,21 @@ HTTPConnection::~HTTPConnection() {
     M_LOG_DEBUG("~HTTPConnection");
 }
 
-bool HTTPConnection::SendResponse(const HTTPResponse &response) {
-    bool keep_alive = m_server->KeepAlive() && response.KeepAlive();
+void HTTPConnection::OnConnection(::cube::net::TcpConnectionPtr conn) {
+    // only to be refered by tcp conn
+}
+
+bool HTTPConnection::SendResponse(HTTPResponse &response) {
+    // server does not support keep-alive
+    if (!m_server->KeepAlive())
+        response.SetKeepAlive(false);
+
+    bool keep_alive = response.KeepAlive();
     return m_conn->Write(response.ToString(),
             std::bind(&HTTPConnection::OnWriteComplete, this, _1, keep_alive));
 }
 
-void HTTPConnection::OnConnect(TcpConnectionPtr conn, int status) {
-    // do nothing
-}
-
-void HTTPConnection::OnDisconnect(TcpConnectionPtr conn) {
-    m_server->RemoveConnection(shared_from_this());
-}
-
-void HTTPConnection::OnHeaders(TcpConnectionPtr conn, Buffer *buffer) {
+void HTTPConnection::OnHeaders(::cube::net::TcpConnectionPtr conn, Buffer *buffer) {
     m_request.Reset();
 
     bool succ = ParseHeaders(buffer);
@@ -85,7 +85,7 @@ bool HTTPConnection::ParseHeaders(Buffer *buffer) {
     std::vector<std::string> fields;
     ::cube::strings::Split(lines[0], " ", fields);
     if (fields.size() != 3) {
-        M_LOG_ERROR("request line format invalid, %s", lines[0].c_str());
+        M_LOG_ERROR("request line format invalid, \"%s\"", lines[0].c_str());
         return false;
     }
     m_request.SetMethod(fields[0]);
@@ -108,7 +108,7 @@ bool HTTPConnection::ParseHeaders(Buffer *buffer) {
     return true;
 }
 
-void HTTPConnection::OnBody(TcpConnectionPtr conn, Buffer *buffer) {
+void HTTPConnection::OnBody(::cube::net::TcpConnectionPtr conn, Buffer *buffer) {
     // TODO Parse body according to ContentType
     size_t body_len = m_request.ContentLength();
     assert(body_len > m_request.Body().length());
@@ -132,24 +132,20 @@ void HTTPConnection::HandleRequest() {
     m_request_callback(shared_from_this(), m_request);
 }
 
-void HTTPConnection::OnWriteComplete(TcpConnectionPtr conn, bool keep_alive) {
-    //LOG_DEBUG("conn[%lu] keepalive[%d]", conn->Id(), keep_alive);
+void HTTPConnection::OnWriteComplete(::cube::net::TcpConnectionPtr conn, bool keep_alive) {
+    M_LOG_DEBUG("conn[%lu] keepalive[%d]", conn->Id(), keep_alive);
     if (!keep_alive) {
         conn->Close();
         return;
     }
 
-    // continue to read request
+    // continue to read a new request
     conn->ReadUntil("\r\n\r\n", std::bind(&HTTPConnection::OnHeaders, this, _1, _2));
 }
 
 void HTTPConnection::Close() {
     if (!Closed())
         m_conn->Close();
-}
-
-bool HTTPConnection::Closed() const {
-    return m_conn->Closed();
 }
 
 }

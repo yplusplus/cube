@@ -7,6 +7,8 @@
 
 namespace cube {
 
+namespace net {
+
 class EventLoop;
 class Eventor;
 
@@ -53,6 +55,8 @@ class Poller {
         // 文件句柄到 Eventor的映射
         std::map<int, Eventor *> m_eventors;
 };
+
+}
 
 }
 

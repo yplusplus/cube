@@ -1,6 +1,6 @@
+#include "base/buffer.h"
 #include "net/event_loop.h"
 #include "net/inet_addr.h"
-#include "net/buffer.h"
 #include "http_connection.h"
 #include "http_request.h"
 #include "http_response.h"
@@ -12,13 +12,13 @@ namespace cube {
 
 namespace http {
 
-HTTPServer::HTTPServer(EventLoop *event_loop,
-        const InetAddr &server_addr) 
+HTTPServer::HTTPServer(::cube::net::EventLoop *event_loop,
+        const ::cube::net::InetAddr &server_addr) 
     : m_event_loop(event_loop),
     m_server(m_event_loop, server_addr),
     m_enable_keepalive(true) {
 
-    m_server.SetNewConnectionCallback(std::bind(&HTTPServer::OnNewConnection, this, _1));
+    m_server.SetConnectionCallback(std::bind(&HTTPServer::OnConnection, this, _1));
 }
 
 HTTPServer::~HTTPServer() {
@@ -29,19 +29,27 @@ bool HTTPServer::Start() {
 }
 
 void HTTPServer::Stop() {
+    // stop tcp server
     m_server.Stop();
 }
 
-void HTTPServer::OnNewConnection(TcpConnectionPtr conn) {
-    // a new connection coming
-    HTTPConnectionPtr http_conn(new HTTPConnection(
-                m_event_loop, this, conn,
-                std::bind(&HTTPServer::OnRequest, this, _1, _2)));
-    m_conns[conn->Id()] = std::move(http_conn);
-}
+void HTTPServer::OnConnection(::cube::net::TcpConnectionPtr conn) {
+    assert(conn->GetState() == ::cube::net::TcpConnection::ConnState_Connected);
 
-void HTTPServer::RemoveConnection(HTTPConnectionPtr conn) {
-    m_conns.erase(conn->Id());
+    switch (conn->GetState()) {
+        case ::cube::net::TcpConnection::ConnState_Connected:
+        {
+            // a new connection coming
+            HTTPConnectionPtr http_conn(new HTTPConnection(this, conn,
+                        std::bind(&HTTPServer::OnRequest, this, _1, _2)));
+
+            // reset connection callback to refer http conn
+            conn->SetConnectionCallback(std::bind(&HTTPConnection::OnConnection, http_conn, std::placeholders::_1));
+        }
+        break;
+        default: // do nothing
+            break;
+    }
 }
 
 void HTTPServer::OnRequest(HTTPConnectionPtr conn, const HTTPRequest &request) {

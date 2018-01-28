@@ -9,6 +9,8 @@
 
 namespace cube {
 
+namespace net {
+
 class EventLoop;
 
 // 对事件的封装
@@ -53,4 +55,5 @@ class Eventor {
 
 }
 
+}
 #endif

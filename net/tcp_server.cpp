@@ -1,13 +1,13 @@
 #include "base/logging.h"
 #include "tcp_server.h"
-#include "event_loop.h"
 #include "acceptor.h"
-#include "tcp_connection.h"
 #include "socket.h"
 
 using namespace std::placeholders;
 
 namespace cube {
+
+namespace net {
 
 TcpServer::TcpServer(EventLoop *event_loop, const InetAddr &server_addr)
     : m_event_loop(event_loop),
@@ -54,14 +54,29 @@ void TcpServer::OnAccept(int sockfd) {
                 local_addr,
                 peer_addr));
 
-    m_event_loop->Post(std::bind(&TcpConnection::Initialize, conn));
-
-    // 执行回调函数
-    assert(m_new_connection_callback);
-    m_new_connection_callback(conn);
-
+    // put conn into conns map
+    // TODO: thread-safety
+    m_conns_map[conn->Id()] = conn;
     M_LOG_INFO("New Connection[%lu] in TcpServer localAddr[%s], peerAddr[%s]",
             conn->Id(), local_addr.IpPort().c_str(), peer_addr.IpPort().c_str());
+
+    conn->SetConnectionCallback(m_connection_callback);
+    conn->SetCloseCallback(std::bind(&TcpServer::RemoveConnection, this, std::placeholders::_1));
+
+    // make sure to call OnConnectionEstablished in loop-thread
+    conn->GetEventLoop()->Post(std::bind(&TcpConnection::OnConnectionEstablished, conn));
+}
+
+void TcpServer::RemoveConnection(TcpConnectionPtr conn) {
+    M_LOG_TRACE("Remove Connection[%lu] in TcpServer local_addr[%s], peerAddr[%s]",
+            conn->Id(),
+            conn->LocalAddr().IpPort().c_str(),
+            conn->PeerAddr().IpPort().c_str());
+
+    // TODO: thread-safety
+    m_conns_map.erase(conn->Id());
+}
+
 }
 
 }

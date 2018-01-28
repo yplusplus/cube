@@ -9,33 +9,30 @@
             ::cube::logging::GetLogger()->level("%s|%d|%s|" format "\n", __FILE__, __LINE__, __FUNCTION__ , ##args); \
     } while(false)
 
-#define M_LOG_DEBUG(format, args...) M_LOG(Debug, format, ##args)
-#define M_LOG_TRACE(format, args...) M_LOG(Trace, format, ##args)
-#define M_LOG_WARN(format, args...)  M_LOG(Warn, format, ##args)
-#define M_LOG_ERROR(format, args...) M_LOG(Error, format, ##args)
-#define M_LOG_INFO(format, args...)  M_LOG(Info, format, ##args)
+#define M_LOG_LOG(format, args...) M_LOG(Log, "LOG|" format, ##args)
+#define M_LOG_DEBUG(format, args...) M_LOG(Debug, "DEBUG|" format, ##args)
+#define M_LOG_TRACE(format, args...) M_LOG(Trace, "TRACE|" format, ##args)
+#define M_LOG_WARN(format, args...)  M_LOG(Warn, "WARN|" format, ##args)
+#define M_LOG_ERROR(format, args...) M_LOG(Error, "ERROR|" format, ##args)
+#define M_LOG_INFO(format, args...)  M_LOG(Info, "INFO|" format, ##args)
 
 namespace cube {
 
 namespace logging {
 
+enum LogLevel {
+    LogLevel_Unknown,
+    LogLevel_Trace,
+    LogLevel_Debug,
+    LogLevel_Warn,
+    LogLevel_Info,
+    LogLevel_Error,
+};
+
 class Logger {
     public:
-        enum LogLevel {
-            LogLevel_Debug,
-            LogLevel_Trace,
-            LogLevel_Warn,
-            LogLevel_Info,
-            LogLevel_Error,
-        };
-
-        Logger();
-        Logger(LogLevel log_level);
-        virtual ~Logger();
-
-        // log level getter ans setter
-        LogLevel LoggerLevel() const;
-        void SetLoggerLevel(LogLevel log_level);
+        Logger() {}
+        virtual ~Logger() {}
 
         // do not need to override these function in most cases
         virtual void Debug(const char *format, ...);
@@ -48,18 +45,12 @@ class Logger {
     protected:
         // override to implement your own Output() function
         virtual void Output(const char *foramt, va_list args) = 0;
-
-    protected:
-
-        // log level
-        LogLevel m_log_level;
 };
 
 class StdoutLogger : public Logger {
     public:
-        StdoutLogger();
-        StdoutLogger(LogLevel log_level);
-        virtual ~StdoutLogger();
+        StdoutLogger() {}
+        virtual ~StdoutLogger() {}
 
     protected:
         virtual void Output(const char *format, va_list args);
@@ -67,15 +58,17 @@ class StdoutLogger : public Logger {
 
 class EmptyLogger : public Logger {
     public:
-        EmptyLogger();
-        virtual ~EmptyLogger();
+        EmptyLogger() {}
+        virtual ~EmptyLogger() {}
 
     protected:
-        virtual void Output(const char *format, va_list args);
+        virtual void Output(const char *format, va_list args) {}
 };
 
 typedef std::shared_ptr<Logger> LoggerPtr;
 
+LogLevel LoggerLevel();
+void SetLoggerLevel(LogLevel logger_level);
 LoggerPtr GetLogger();
 void SetLogger(LoggerPtr logger);
 

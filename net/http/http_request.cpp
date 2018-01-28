@@ -1,11 +1,13 @@
+#include "base/logging.h"
+#include "base/strings.h"
 #include "http_request.h"
 
 namespace cube {
 
 namespace http {
 
-HTTPRequest::HTTPRequest() :
-    m_parse_state(PARSE_REQUEST_LINE) {
+HTTPRequest::HTTPRequest() {
+    Reset();
 }
 
 HTTPRequest::~HTTPRequest() {
@@ -13,10 +15,40 @@ HTTPRequest::~HTTPRequest() {
 
 bool HTTPRequest::KeepAlive() const {
     const std::string value = Header("Connection");
-    if (value == "Keep-Alive" || value == "keep-alive"
-            || (value == HTTP_HEADER_NONE && m_proto == "HTTP/1.1"))
-        return true;
-    return false;
+
+    // HTTP/1.1 supports keep-alive default
+    if (value == HTTP_HEADER_NONE) {
+        return m_proto == HTTP_VERSION_1_1;
+    }
+
+    return (value == "Keep-Alive" || value == "keep-alive");
+}
+
+void HTTPRequest::SetURL(const std::string &url) {
+    if (url.length() == 0)
+        return;
+
+    // relative path
+    if (url[0] == '/') {
+        m_url = url;
+        return;
+    }
+
+    // the url now must begin with "http://"
+    // "https://" is not supported temporarily
+    const std::string scheme("http://");
+    if (!::cube::strings::BeginWith(url, scheme))
+        return;
+
+    std::string host = url.substr(scheme.length());
+    size_t slash = host.find('/');
+    if (slash == std::string::npos) {
+        SetHeader("Host", host);
+        m_url = '/';
+    } else {
+        SetHeader("Host", host.substr(0, slash));
+        m_url = host.substr(slash);
+    }
 }
 
 void HTTPRequest::SetKeepAlive(bool on) {
@@ -69,9 +101,10 @@ std::string HTTPRequest::ToString() const {
 }
 
 void HTTPRequest::Reset() {
-    m_url.clear();
-    m_method.clear();
-    m_proto.clear();
+    M_LOG_TRACE("");
+    SetMethod("GET");
+    SetURL("/");
+    SetProto(HTTP_VERSION_1_1);
     m_headers.clear();
     m_body.clear();
     m_parse_state = PARSE_REQUEST_LINE;

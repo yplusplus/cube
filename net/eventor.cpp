@@ -5,6 +5,8 @@
 
 namespace cube {
 
+namespace net {
+
 Eventor::Eventor(EventLoop *event_loop, int fd)
     : m_event_loop(event_loop),
     m_fd(fd),
@@ -33,6 +35,8 @@ void Eventor::Remove() {
     m_events = 0;
     // 从事件循环中删除自己，不再监听该socket句柄下的事件
     m_event_loop->RemoveEvents(this);
+}
+
 }
 
 }
