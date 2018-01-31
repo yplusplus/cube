@@ -33,7 +33,7 @@ std::shared_ptr<TcpConnection> Connector::Connect(EventLoop *event_loop, const I
     int sockfd;
     int ret = Connect(server_addr, sockfd);
     if (ret != CUBE_OK) {
-        return NULL;
+        return std::shared_ptr<TcpConnection>();
     }
 
     auto conn = std::make_shared<TcpConnection>(
