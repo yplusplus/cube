@@ -27,6 +27,13 @@ Acceptor::~Acceptor() {
 }
 
 bool Acceptor::Listen() {
+    // 构造非阻塞socket
+    // 设置地址重用
+    // bind and listen
+    //
+    // 重置eventor
+    // 向eventor中设置事件唤醒时的回调函数
+    // 激活eventor中的读事件
     int sockfd = sockets::CreateNonBlockStreamSocket();
     if (sockfd < 0) {
         m_err_msg = std::string(strerror(errno));
@@ -55,12 +62,16 @@ void Acceptor::Stop() {
 }
 
 void Acceptor::HandleEvents(int revents) {
+    // acceptor的回调函数，注册到eventor中
+    // acceptor只需要监听读事件，所以回调函数中只处理读事件唤醒时的逻辑
     if (revents & Poller::POLLIN) {
         HandleRead();
     }
 }
 
 void Acceptor::HandleRead() {
+    // accept新到达的客户端连接请求
+    // 获得socket文件句柄后调用accept回调函数
     int fd = m_sock->Accept();
     if (fd >= 0) {
         assert(m_accept_callback);

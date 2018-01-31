@@ -7,6 +7,9 @@ namespace net {
 
 class InetAddr;
 
+// 对unix API的封装，对socket句柄进行操作
+// 对socket属性的修改，根据socket句柄获取IPv4地址等等
+
 namespace sockets {
 
 int CreateStreamSocket();
@@ -27,6 +30,9 @@ InetAddr GetPeerAddr(int sockfd);
 
 }
 
+
+// 对socket的封装，包括构造socket，bind，listen，accept等API的封装
+// 以及对socket属性的修改
 class Socket {
     public:
         Socket(int sockfd);

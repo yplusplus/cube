@@ -23,7 +23,7 @@ class TcpServer {
         ~TcpServer();
 
         // for tcp connection
-        void SetConnectionCallback(const ConnectionCallback &cb) 
+        void SetConnectionCallback(const ConnectionCallback &cb)
         { m_connection_callback = cb; }
 
         bool Start();

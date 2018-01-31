@@ -23,7 +23,7 @@ static int CreateEventFd() {
     return event_fd;
 }
 
-EventLoop::EventLoop() 
+EventLoop::EventLoop()
     : m_thread_id(std::this_thread::get_id()),
     m_wakeup_fd(CreateEventFd()),
     m_wakeup_eventor(new Eventor(this, m_wakeup_fd)),
@@ -69,14 +69,17 @@ void EventLoop::RemoveEvents(Eventor *eventor) {
 }
 
 TimerId EventLoop::RunAt(const Task &task, int64_t expiration_ms) {
+    // 添加一次执行的定时任务，expiration_ms执行
     return m_timer_queue->AddTimer(task, expiration_ms, 0);
 }
 
 TimerId EventLoop::RunAfter(const Task &task, int64_t delay_ms) {
+    // 添加一次执行的定时任务，delay_ms后执行
     return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMillis() + delay_ms, 0);
 }
 
 TimerId EventLoop::RunPeriodic(const Task &task, int64_t interval_ms) {
+    // 添加循环执行的任务，循环时间间隔是interval_ms, 开始时间是当前时间+interval_ms
     return m_timer_queue->AddTimer(task, TimeUtil::CurrentTimeMillis() + interval_ms, interval_ms);
 }
 
@@ -85,6 +88,7 @@ TimerId EventLoop::RunPeriodic(const Task &task, int64_t delay_ms, int64_t inter
 }
 
 void EventLoop::CancelTimer(TimerId timer_id) {
+    // 删除一个定时任务
     m_timer_queue->RemoveTimer(timer_id);
 }
 
@@ -98,6 +102,7 @@ void EventLoop::Loop() {
 }
 
 int EventLoop::LoopOnce(int poll_timeout_ms) {
+    // 一次事件轮询
     AssertInLoopThread();
 
     int result = 0;
@@ -109,6 +114,7 @@ int EventLoop::LoopOnce(int poll_timeout_ms) {
         tasks.swap(m_tasks);
     }
 
+    // 执行定时任务
     for (auto it = tasks.begin(); it != tasks.end(); it++) {
         (*it)();
     }
@@ -117,9 +123,9 @@ int EventLoop::LoopOnce(int poll_timeout_ms) {
     // timer queue
     int64_t next_expiration = -1;
     result += m_timer_queue->Expire(now_ms, next_expiration);
-    
+
     // poller
-    if (next_expiration > now_ms 
+    if (next_expiration > now_ms
             && (poll_timeout_ms == -1 || (next_expiration - now_ms) < poll_timeout_ms)) {
         poll_timeout_ms = next_expiration - now_ms;
     }

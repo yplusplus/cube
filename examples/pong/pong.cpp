@@ -24,6 +24,8 @@ void OnConnection(TcpConnectionPtr conn) {
 }
 
 void OnPing(TcpConnectionPtr conn, Buffer *buffer) {
+    // 处理函数，读取一个"ping", 回复一个"pong"
+    // g_pings 计数+1，
     if (buffer->ReadableBytes() < 4) {
         conn->Close();
         return;
@@ -41,6 +43,7 @@ void ShowStat() {
 }
 
 int main() {
+    // 注册定时任务，以时间间隔定时执行
     g_event_loop.RunPeriodic(ShowStat, 1000);
     InetAddr addr(8456);
     TcpServer server(&g_event_loop, addr);
